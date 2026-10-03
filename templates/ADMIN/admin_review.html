@@ -1,0 +1,356 @@
+{% extends 'ADMIN/admin_base.html' %}
+{% block nav_alerts %}active{% endblock %}
+{% block title %}Review Evidence #{{ evidence.id }} — E-Vidence Admin{% endblock %}
+{% block content %}
+
+<!-- Header & Breadcrumbs -->
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <div class="mb-2">
+            <a href="/admin_alerts/" style="color:#8ba5c0;font-size:0.85rem;text-decoration:none;">
+                <i class="fa fa-arrow-left me-1"></i>Back to Modification Alerts
+            </a>
+            <span style="color:#4a6280;margin:0 8px;">/</span>
+            <span style="color:#00d4ff;font-size:0.85rem;">Case #{{ evidence.id }} Audit</span>
+        </div>
+        <h2><i class="fa fa-shield-virus text-warning me-2"></i>Tampered Evidence Forensic Audit</h2>
+        <p>Comparison between the flagged submission and the original source evidence.</p>
+    </div>
+
+    <!-- Current Decision Status & Actions -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        {% if evidence.status == 'Approved' %}
+            <span class="badge-approved" style="font-size:0.9rem;padding:7px 16px;"><i class="fa fa-circle-check me-1"></i>STATUS: APPROVED</span>
+            <a href="/admin_reject/{{ evidence.id }}/" class="btn-reject" style="padding:7px 16px;font-size:0.85rem;" onclick="return confirm('Are you sure you want to change status to REJECTED?');">
+                <i class="fa fa-ban me-1"></i>Switch to Reject
+            </a>
+        {% elif evidence.status == 'Rejected' %}
+            <span class="badge-rejected" style="font-size:0.9rem;padding:7px 16px;"><i class="fa fa-circle-xmark me-1"></i>STATUS: REJECTED</span>
+            <a href="/admin_approve/{{ evidence.id }}/" class="btn-approve" style="padding:7px 16px;font-size:0.85rem;" onclick="return confirm('Are you sure you want to change status to APPROVED?');">
+                <i class="fa fa-check me-1"></i>Switch to Approve
+            </a>
+        {% else %}
+            <span class="badge-pending" style="font-size:0.9rem;padding:7px 16px;"><i class="fa fa-clock me-1"></i>STATUS: PENDING REVIEW</span>
+            <a href="/admin_approve/{{ evidence.id }}/" class="btn-approve" style="padding:7px 20px;font-size:0.9rem;" onclick="return confirm('Approve this evidence into the verified registry?');">
+                <i class="fa fa-check me-1"></i>Approve Evidence
+            </a>
+            <a href="/admin_reject/{{ evidence.id }}/" class="btn-reject" style="padding:7px 20px;font-size:0.9rem;" onclick="return confirm('Reject this modified evidence as unauthorized/tampered?');">
+                <i class="fa fa-ban me-1"></i>Reject Evidence
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Forensic Analysis Metric Banner -->
+<div class="card p-3 mb-4" style="background:rgba(245,158,11,0.08)!important;border-color:rgba(245,158,11,0.35)!important;">
+    <div class="row align-items-center g-3">
+        <div class="col-lg-7">
+            <div class="d-flex align-items-start gap-3">
+                <div style="width:48px;height:48px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#f59e0b;font-size:1.3rem;flex-shrink:0;">
+                    <i class="fa fa-fingerprint"></i>
+                </div>
+                <div>
+                    <h5 class="mb-1" style="color:#fff;font-size:1.05rem;">
+                        Automated Image Similarity Detection
+                    </h5>
+                    <p class="mb-0" style="color:#8ba5c0;font-size:0.86rem;line-height:1.5;">
+                        Flagged using perceptual hash distance (pHash) and Oriented FAST & Rotated BRIEF (ORB) keypoint feature descriptors.
+                        {% if match_metrics.similarity_verdict %}
+                            <strong class="text-warning d-block mt-1">{{ match_metrics.similarity_verdict }}</strong>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="d-flex justify-content-lg-end gap-3 flex-wrap">
+                <div style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 14px;text-align:center;">
+                    <div style="font-size:0.72rem;color:#8ba5c0;text-transform:uppercase;letter-spacing:1px;">pHash Distance</div>
+                    <div style="font-size:1.2rem;font-weight:700;color:{% if match_metrics.phash_difference != None and match_metrics.phash_difference <= 10 %}#ef4444{% else %}#10b981{% endif %};font-family:Orbitron,sans-serif;">
+                        {% if match_metrics.phash_difference != None %}{{ match_metrics.phash_difference }}{% else %}N/A{% endif %}
+                    </div>
+                    <div style="font-size:0.68rem;color:#8ba5c0;">threshold &le; 10</div>
+                </div>
+                <div style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 14px;text-align:center;">
+                    <div style="font-size:0.72rem;color:#8ba5c0;text-transform:uppercase;letter-spacing:1px;">ORB Keypoint Matches</div>
+                    <div style="font-size:1.2rem;font-weight:700;color:{% if match_metrics.orb_matches != None and match_metrics.orb_matches >= 15 %}#ef4444{% else %}#10b981{% endif %};font-family:Orbitron,sans-serif;">
+                        {% if match_metrics.orb_matches != None %}{{ match_metrics.orb_matches }}{% else %}N/A{% endif %}
+                    </div>
+                    <div style="font-size:0.68rem;color:#8ba5c0;">threshold &ge; 15</div>
+                </div>
+                <div style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 14px;text-align:center;">
+                    <div style="font-size:0.72rem;color:#8ba5c0;text-transform:uppercase;letter-spacing:1px;">SHA-256 Exact</div>
+                    <div style="font-size:1.2rem;font-weight:700;color:#10b981;font-family:Orbitron,sans-serif;">
+                        DIFFERENT
+                    </div>
+                    <div style="font-size:0.68rem;color:#8ba5c0;">Non-identical file</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SIDE-BY-SIDE COMPARISON: ORIGINAL VS TAMPERED -->
+<div class="row g-4 mb-4">
+
+    <!-- LEFT: ORIGINAL EVIDENCE -->
+    <div class="col-lg-6">
+        <div class="comparison-card" style="border-color:rgba(16,185,129,0.35);">
+            <div class="comparison-header" style="border-bottom:1px solid rgba(16,185,129,0.3);">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:28px;height:28px;background:rgba(16,185,129,0.15);border:1px solid #10b981;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#10b981;font-size:0.85rem;">
+                        <i class="fa fa-shield-halved"></i>
+                    </span>
+                    <h5 class="mb-0" style="color:#10b981;font-size:0.95rem;letter-spacing:1px;">ORIGINAL EVIDENCE (SOURCE)</h5>
+                </div>
+                {% if original_evidence %}
+                    <span style="font-family:monospace;color:#8ba5c0;font-size:0.8rem;">#{{ original_evidence.id }}</span>
+                {% endif %}
+            </div>
+
+            {% if original_evidence %}
+                <!-- Image Preview -->
+                <div class="image-preview-box">
+                    {% if original_evidence.evidence_file and original_evidence.category == 'Image' %}
+                        <a href="{{ original_evidence.evidence_file.url }}" target="_blank" title="Click to view full image in new tab">
+                            <img src="{{ original_evidence.evidence_file.url }}" alt="{{ original_evidence.evidence_title }}">
+                        </a>
+                    {% else %}
+                        <div style="padding:3rem;color:#8ba5c0;">
+                            <i class="fa fa-file" style="font-size:3rem;opacity:0.4;margin-bottom:0.5rem;display:block;"></i>
+                            {{ original_evidence.category }} file
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="p-3 flex-grow-1">
+                    <!-- Title & Basic Info -->
+                    <div class="mb-3">
+                        <div style="font-size:1.1rem;font-weight:600;color:#fff;margin-bottom:0.2rem;">
+                            {{ original_evidence.evidence_title }}
+                        </div>
+                        <div style="font-size:0.82rem;color:#8ba5c0;line-height:1.6;">
+                            {{ original_evidence.description|default:"No description provided." }}
+                        </div>
+                    </div>
+
+                    <!-- Hash & Technical Info -->
+                    <div class="info-row">
+                        <div class="info-label">Original Category</div>
+                        <div class="info-value text-cyan">{{ original_evidence.category }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Uploaded At</div>
+                        <div class="info-value">{{ original_evidence.uploaded_at|date:"d M Y, H:i:s" }}</div>
+                    </div>
+                    <div class="info-row" style="flex-direction:column;gap:4px;">
+                        <div class="info-label">SHA-256 Fingerprint</div>
+                        <div class="hash-text" style="color:#10b981;">{{ original_evidence.file_hash }}</div>
+                    </div>
+                    {% if original_evidence.image_hash %}
+                    <div class="info-row" style="flex-direction:column;gap:4px;">
+                        <div class="info-label">pHash Hex Value</div>
+                        <div class="hash-text" style="color:#8ba5c0;">{{ original_evidence.image_hash }}</div>
+                    </div>
+                    {% endif %}
+
+                    <!-- WHO UPLOADED THE ORIGINAL IMAGE -->
+                    <div class="uploader-card mt-3" style="border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.04);">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="fa fa-user-check text-green"></i>
+                            <span style="font-size:0.8rem;color:#10b981;font-weight:700;text-transform:uppercase;letter-spacing:1px;">ORIGINAL UPLOADER DETAILS</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if original_profile and original_profile.profile_image %}
+                                <img src="{{ original_profile.profile_image.url }}" alt="{{ original_profile.name }}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #10b981;">
+                            {% else %}
+                                <div style="width:48px;height:48px;border-radius:50%;background:rgba(16,185,129,0.15);border:1px solid #10b981;display:flex;align-items:center;justify-content:center;color:#10b981;font-size:1.2rem;">
+                                    <i class="fa fa-user"></i>
+                                </div>
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <div style="font-weight:600;color:#fff;font-size:0.95rem;">
+                                    {% if original_profile %}{{ original_profile.name }}{% else %}{{ original_evidence.user.username }}{% endif %}
+                                </div>
+                                <div style="font-size:0.8rem;color:#00d4ff;">@{{ original_evidence.user.username }}</div>
+                                <div style="font-size:0.75rem;color:#8ba5c0;margin-top:2px;">
+                                    {% if original_profile %}
+                                        <i class="fa fa-envelope me-1"></i>{{ original_profile.email }} | <i class="fa fa-phone me-1"></i>{{ original_profile.phone }}
+                                    {% else %}
+                                        <i class="fa fa-envelope me-1"></i>{{ original_evidence.user.email }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            {% else %}
+                <div style="padding:4rem 2rem;text-align:center;color:#8ba5c0;">
+                    <i class="fa fa-circle-question" style="font-size:3rem;opacity:0.3;margin-bottom:1rem;display:block;"></i>
+                    Original source record is not available or was removed.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- RIGHT: TAMPERED / CROPPED EVIDENCE -->
+    <div class="col-lg-6">
+        <div class="comparison-card" style="border-color:rgba(239,68,68,0.35);">
+            <div class="comparison-header" style="border-bottom:1px solid rgba(239,68,68,0.3);">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:28px;height:28px;background:rgba(239,68,68,0.15);border:1px solid #ef4444;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:0.85rem;">
+                        <i class="fa fa-triangle-exclamation"></i>
+                    </span>
+                    <h5 class="mb-0" style="color:#ef4444;font-size:0.95rem;letter-spacing:1px;">FLAGGED / TAMPERED EVIDENCE</h5>
+                </div>
+                <span style="font-family:monospace;color:#8ba5c0;font-size:0.8rem;">#{{ evidence.id }}</span>
+            </div>
+
+            <!-- Image Preview -->
+            <div class="image-preview-box">
+                {% if evidence.evidence_file and evidence.category == 'Image' %}
+                    <a href="{{ evidence.evidence_file.url }}" target="_blank" title="Click to view full image in new tab">
+                        <img src="{{ evidence.evidence_file.url }}" alt="{{ evidence.evidence_title }}">
+                    </a>
+                {% else %}
+                    <div style="padding:3rem;color:#8ba5c0;">
+                        <i class="fa fa-file" style="font-size:3rem;opacity:0.4;margin-bottom:0.5rem;display:block;"></i>
+                        {{ evidence.category }} file
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="p-3 flex-grow-1">
+                <!-- Title & Basic Info -->
+                <div class="mb-3">
+                    <div style="font-size:1.1rem;font-weight:600;color:#fff;margin-bottom:0.2rem;">
+                        {{ evidence.evidence_title }}
+                    </div>
+                    <div style="font-size:0.82rem;color:#8ba5c0;line-height:1.6;">
+                        {{ evidence.description|default:"No description provided." }}
+                    </div>
+                </div>
+
+                <!-- Hash & Technical Info -->
+                <div class="info-row">
+                    <div class="info-label">Flagged Category</div>
+                    <div class="info-value text-cyan">{{ evidence.category }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Uploaded At</div>
+                    <div class="info-value">{{ evidence.uploaded_at|date:"d M Y, H:i:s" }}</div>
+                </div>
+                <div class="info-row" style="flex-direction:column;gap:4px;">
+                    <div class="info-label">SHA-256 Fingerprint</div>
+                    <div class="hash-text" style="color:#ef4444;">{{ evidence.file_hash }}</div>
+                </div>
+                {% if evidence.image_hash %}
+                <div class="info-row" style="flex-direction:column;gap:4px;">
+                    <div class="info-label">pHash Hex Value</div>
+                    <div class="hash-text" style="color:#8ba5c0;">{{ evidence.image_hash }}</div>
+                </div>
+                {% endif %}
+
+                <!-- WHO UPLOADED THE TAMPERED IMAGE -->
+                <div class="uploader-card mt-3" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.04);">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="fa fa-user-xmark text-danger"></i>
+                        <span style="font-size:0.8rem;color:#ef4444;font-weight:700;text-transform:uppercase;letter-spacing:1px;">FLAGGED SUBMITTER DETAILS</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        {% if tampered_profile and tampered_profile.profile_image %}
+                            <img src="{{ tampered_profile.profile_image.url }}" alt="{{ tampered_profile.name }}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #ef4444;">
+                        {% else %}
+                            <div style="width:48px;height:48px;border-radius:50%;background:rgba(239,68,68,0.15);border:1px solid #ef4444;display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:1.2rem;">
+                                <i class="fa fa-user"></i>
+                            </div>
+                        {% endif %}
+                        <div class="flex-grow-1">
+                            <div style="font-weight:600;color:#fff;font-size:0.95rem;">
+                                {% if tampered_profile %}{{ tampered_profile.name }}{% else %}{{ evidence.user.username }}{% endif %}
+                            </div>
+                            <div style="font-size:0.8rem;color:#f59e0b;">@{{ evidence.user.username }}</div>
+                            <div style="font-size:0.75rem;color:#8ba5c0;margin-top:2px;">
+                                {% if tampered_profile %}
+                                    <i class="fa fa-envelope me-1"></i>{{ tampered_profile.email }} | <i class="fa fa-phone me-1"></i>{{ tampered_profile.phone }}
+                                {% else %}
+                                    <i class="fa fa-envelope me-1"></i>{{ evidence.user.email }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ADMIN DECISION ACTIONS & BLOCKCHAIN TRAIL -->
+<div class="row g-4">
+    <!-- Decision Action Panel -->
+    <div class="col-lg-6">
+        <div class="card p-4">
+            <h5 class="text-cyan mb-3" style="font-size:0.95rem;"><i class="fa fa-gavel me-2"></i>ADMINISTRATIVE DECISION</h5>
+            <p style="color:#8ba5c0;font-size:0.86rem;line-height:1.6;margin-bottom:1.5rem;">
+                Based on the side-by-side visual analysis and feature descriptors, decide whether this modified submission should be accepted as valid new evidence or rejected due to illicit tampering.
+            </p>
+
+            <div class="d-flex flex-column gap-3">
+                <div class="p-3" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);border-radius:10px;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong style="color:#10b981;"><i class="fa fa-check-circle me-1"></i>Approve Submission</strong>
+                        <span style="font-size:0.75rem;color:#8ba5c0;">Status becomes Approved</span>
+                    </div>
+                    <div style="font-size:0.82rem;color:#8ba5c0;margin-bottom:0.8rem;">
+                        Permits this evidence to remain in the verified network ledger as an approved derivative or authenticated variant.
+                    </div>
+                    <a href="/admin_approve/{{ evidence.id }}/" class="btn-approve" onclick="return confirm('Confirm APPROVAL for this evidence?');">
+                        <i class="fa fa-check me-1"></i>Approve Evidence #{{ evidence.id }}
+                    </a>
+                </div>
+
+                <div class="p-3" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:10px;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong style="color:#ef4444;"><i class="fa fa-circle-xmark me-1"></i>Reject Submission</strong>
+                        <span style="font-size:0.75rem;color:#8ba5c0;">Status becomes Rejected</span>
+                    </div>
+                    <div style="font-size:0.82rem;color:#8ba5c0;margin-bottom:0.8rem;">
+                        Marks this evidence as rejected and flags the file as unauthorized tampered material.
+                    </div>
+                    <a href="/admin_reject/{{ evidence.id }}/" class="btn-reject" onclick="return confirm('Confirm REJECTION for this evidence?');">
+                        <i class="fa fa-ban me-1"></i>Reject Evidence #{{ evidence.id }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blockchain Audit Trail -->
+    <div class="col-lg-6">
+        <div class="card p-4">
+            <h5 class="text-cyan mb-3" style="font-size:0.95rem;"><i class="fa fa-link me-2"></i>BLOCKCHAIN IMMUTABLE AUDIT TRAIL</h5>
+            <div style="max-height:300px;overflow-y:auto;">
+                {% for block in blocks %}
+                <div class="block-item">
+                    <div style="font-size:0.82rem;font-weight:600;color:#fff;margin-bottom:0.3rem;">
+                        Block <span class="text-cyan">#{{ block.block_index }}</span>
+                        <span style="float:right;font-size:0.75rem;color:#8ba5c0;">{{ block.timestamp|date:"d M Y H:i" }}</span>
+                    </div>
+                    <div style="font-size:0.75rem;color:#8ba5c0;">Current Hash:</div>
+                    <div class="hash-text mb-1" style="font-size:0.72rem;">{{ block.current_hash }}</div>
+                    <div style="font-size:0.75rem;color:#8ba5c0;">Previous Hash:</div>
+                    <div class="hash-text" style="font-size:0.72rem;color:#8ba5c0;">{{ block.previous_hash }}</div>
+                </div>
+                {% empty %}
+                <div style="color:#8ba5c0;font-size:0.85rem;text-align:center;padding:2rem;">
+                    No blockchain blocks found for this item.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
