@@ -1,0 +1,59 @@
+{% extends 'ADMIN/admin_base.html' %}
+{% block nav_hist %}active{% endblock %}
+{% block title %}Verification History — E-Vidence Admin{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h2><i class="fa fa-clock-rotate-left me-2"></i>Verification Audit Log</h2>
+    <p>Full history of all integrity verifications run on digital evidence. Total audits: <strong class="text-cyan">{{ verifications|length }}</strong>.</p>
+</div>
+
+<div class="card p-0">
+    <div class="table-responsive">
+        <table class="cyber-table">
+            <thead>
+                <tr>
+                    <th>Audit ID</th>
+                    <th>Evidence</th>
+                    <th>Verified By</th>
+                    <th>Timestamp</th>
+                    <th>Calculated Hash</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in verifications %}
+                <tr>
+                    <td><span style="font-family:monospace;color:#8ba5c0;font-size:0.85rem;">AUD-{{ record.id }}</span></td>
+                    <td>
+                        <a href="/evidence_details/{{ record.evidence.id }}/" style="color:#00d4ff;font-weight:500;font-size:0.88rem;text-decoration:none;">
+                            #{{ record.evidence.id }} — {{ record.evidence.evidence_title|truncatechars:30 }}
+                        </a>
+                    </td>
+                    <td style="color:#8ba5c0;font-size:0.85rem;">@{{ record.verified_by.username }}</td>
+                    <td style="color:#8ba5c0;font-size:0.82rem;">{{ record.verified_at|date:"d M Y, H:i:s" }}</td>
+                    <td>
+                        <span class="hash-text" style="display:inline-block;max-width:180px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;" title="{{ record.calculated_hash }}">{{ record.calculated_hash }}</span>
+                    </td>
+                    <td>
+                        {% if record.result == 'Verified' %}
+                            <span class="badge-verified"><i class="fa fa-check me-1"></i>Verified</span>
+                        {% else %}
+                            <span class="badge-tampered"><i class="fa fa-triangle-exclamation me-1"></i>Tampered</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:3rem;color:#8ba5c0;">
+                        <i class="fa fa-clock-rotate-left" style="font-size:2.5rem;margin-bottom:1rem;display:block;opacity:0.3;"></i>
+                        No verification audits have been executed yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
