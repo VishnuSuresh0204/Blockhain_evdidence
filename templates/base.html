@@ -4,74 +4,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}App{% endblock %}</title>
-    <!-- Bootstrap CSS -->
+    <title>{% block title %}E-Vidence Ledger{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="/">My App</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    {% if request.session.userid %}
-                        {% if request.session.usertype == 'Admin' %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="/admin_home">Admin Dashboard</a>
-                            </li>
-                        {% elif request.session.usertype == 'User' %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="/user_home">Dashboard</a>
-                            </li>
-                        {% endif %}
-                        <li class="nav-item">
-                            <span class="nav-link text-white">Welcome, {{ request.session.username }}</span>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-danger" href="/logout">Logout</a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="/">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/login">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/registration">Register</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <span class="brand-icon"><i class="fa fa-shield-halved"></i></span>
+            E-VIDENCE
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#nb">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="nb">
+            <ul class="navbar-nav ms-auto align-items-center gap-1">
+                <li class="nav-item"><a class="nav-link" href="/"><i class="fa fa-house me-1"></i>Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="/login/"><i class="fa fa-right-to-bracket me-1"></i>Login</a></li>
+                <li class="nav-item"><a class="nav-link" href="/registration/"><i class="fa fa-user-plus me-1"></i>Register</a></li>
+            </ul>
         </div>
-    </nav>
-
-    <!-- Message Alerts -->
-    <div class="container mt-3">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
     </div>
+</nav>
 
-    <!-- Main Content -->
-    <div class="container mt-4 mb-5">
-        {% block content %}
-        {% endblock content %}
-    </div>
+<!-- ALERTS -->
+<div class="container mt-3">
+{% if messages %}{% for msg in messages %}
+<div class="alert {% if msg.tags == 'error' %}alert-cyber-error{% else %}alert-cyber{% endif %} alert-dismissible fade show" role="alert">
+    <i class="fa {% if msg.tags == 'error' %}fa-triangle-exclamation{% else %}fa-circle-check{% endif %} me-2"></i>{{ msg }}
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}{% endif %}
+</div>
 
-    <!-- Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<div class="container py-4 mb-4">{% block content %}{% endblock %}</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
