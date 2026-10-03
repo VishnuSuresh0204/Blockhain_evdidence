@@ -1,0 +1,52 @@
+body {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1920&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.navbar {
+    background-color: rgba(33, 37, 41, 0.9) !important;
+    backdrop-filter: blur(10px);
+}
+
+.card {
+    background-color: rgba(33, 37, 41, 0.8) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.form-control, .form-select {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: #0d6efd;
+    color: #fff;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.form-control::placeholder {
+    color: #ccc;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+.text-white {
+    color: #fff !important;
+}
