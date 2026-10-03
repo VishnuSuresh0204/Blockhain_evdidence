@@ -1,0 +1,77 @@
+{% extends 'USER/user_base.html' %}
+{% block nav_evidence %}active{% endblock %}
+{% block title %}My Evidence — E-Vidence{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h2><i class="fa fa-folder-open me-2"></i>My Evidence Records</h2>
+        <p>All digital assets you have submitted to the blockchain ledger.</p>
+    </div>
+    <a href="/upload_evidence/" class="btn-cyber" style="padding:0.5rem 1.2rem;font-size:0.85rem;white-space:nowrap;">
+        <i class="fa fa-plus me-1"></i>New Upload
+    </a>
+</div>
+
+<div class="card p-0">
+    <div class="table-responsive">
+        <table class="cyber-table">
+            <thead>
+                <tr>
+                    <th style="width:80px;">ID</th>
+                    <th>Evidence Title</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Uploaded At</th>
+                    <th style="width:130px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in evidence %}
+                <tr>
+                    <td><span style="font-family:monospace;color:#8ba5c0;font-size:0.85rem;">#{{ item.id }}</span></td>
+                    <td>
+                        <div style="font-weight:500;color:#fff;">{{ item.evidence_title }}</div>
+                        <div style="font-size:0.78rem;color:#8ba5c0;margin-top:2px;">{{ item.description|truncatechars:60 }}</div>
+                    </td>
+                    <td>
+                        <span style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.25);color:#00d4ff;font-size:0.75rem;padding:3px 10px;border-radius:20px;">
+                            {% if item.category == 'Document' %}<i class="fa fa-file-lines me-1"></i>
+                            {% elif item.category == 'Image' %}<i class="fa fa-image me-1"></i>
+                            {% elif item.category == 'Video' %}<i class="fa fa-video me-1"></i>
+                            {% elif item.category == 'Audio' %}<i class="fa fa-music me-1"></i>
+                            {% else %}<i class="fa fa-cube me-1"></i>{% endif %}
+                            {{ item.category }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if item.status == 'Verified' %}
+                            <span class="badge-verified"><i class="fa fa-check me-1"></i>Verified</span>
+                        {% elif item.status == 'Tampered' %}
+                            <span class="badge-tampered"><i class="fa fa-triangle-exclamation me-1"></i>Tampered</span>
+                        {% else %}
+                            <span class="badge-pending"><i class="fa fa-clock me-1"></i>Pending</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:#8ba5c0;font-size:0.85rem;">{{ item.uploaded_at|date:"d M Y, H:i" }}</td>
+                    <td>
+                        <a href="/evidence_details/{{ item.id }}/" class="btn-cyber" style="padding:5px 14px;font-size:0.8rem;">
+                            <i class="fa fa-eye me-1"></i>View
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:3rem;color:#8ba5c0;">
+                        <i class="fa fa-folder-open" style="font-size:2.5rem;margin-bottom:1rem;display:block;opacity:0.4;"></i>
+                        No evidence records found.<br>
+                        <a href="/upload_evidence/" class="text-cyan mt-2 d-inline-block">Upload your first evidence →</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
