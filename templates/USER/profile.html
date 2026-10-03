@@ -1,0 +1,117 @@
+{% extends 'USER/user_base.html' %}
+{% block nav_profile %}active{% endblock %}
+{% block title %}My Profile — E-Vidence{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h2><i class="fa fa-user-circle me-2"></i>User Profile</h2>
+    <p>Your registered identity and cryptographic ledger credentials.</p>
+</div>
+
+<div class="row g-4">
+    <!-- Profile Card -->
+    <div class="col-lg-4">
+        <div class="card p-4 text-center">
+            <div class="position-relative d-inline-block mx-auto mb-2">
+                {% if profile.profile_image %}
+                <img src="{{ profile.profile_image.url }}" alt="{{ profile.name }}"
+                     style="width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid #00d4ff;display:block;box-shadow:0 0 20px rgba(0,212,255,0.35);">
+                {% else %}
+                <img src="https://ui-avatars.com/api/?name={{ profile.name|urlencode }}&background=00d4ff&color=050b1a&bold=true&size=150" alt="{{ profile.name }}"
+                     style="width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid #00d4ff;display:block;box-shadow:0 0 20px rgba(0,212,255,0.35);">
+                {% endif %}
+            </div>
+
+            <!-- Upload Photo Button -->
+            <form method="POST" action="/user_profile/" enctype="multipart/form-data" class="mb-3">
+                {% csrf_token %}
+                <label for="id_profile_img" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);color:#00d4ff;font-size:0.78rem;cursor:pointer;padding:5px 14px;border-radius:20px;transition:all 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(0,212,255,0.1)'">
+                    <i class="fa fa-camera me-1"></i>Upload Photo
+                </label>
+                <input type="file" id="id_profile_img" name="profile_image" accept="image/*" style="display:none;" onchange="this.form.submit()">
+            </form>
+
+            <h4 style="color:#fff;font-size:1.15rem;margin-bottom:0.2rem;">{{ profile.name }}</h4>
+            <div style="color:#00d4ff;font-size:0.85rem;margin-bottom:0.8rem;">@{{ user.username }}</div>
+            <span class="badge-verified"><i class="fa fa-check-circle me-1"></i>Verified Identity</span>
+
+            <hr class="section-divider">
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span style="color:#8ba5c0;font-size:0.82rem;">Role</span>
+                <span style="color:#00d4ff;font-size:0.82rem;font-weight:600;">USER</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span style="color:#8ba5c0;font-size:0.82rem;">Ledger Access</span>
+                <span style="color:#10b981;font-size:0.82rem;">Enabled</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <span style="color:#8ba5c0;font-size:0.82rem;">User ID</span>
+                <span style="font-family:monospace;color:#8ba5c0;font-size:0.82rem;">USR-{{ user.id }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Details & Edit -->
+    <div class="col-lg-8">
+        <div class="card p-4 mb-4">
+            <h5 class="text-cyan mb-3" style="font-size:0.9rem;"><i class="fa fa-address-card me-2"></i>ACCOUNT INFORMATION</h5>
+
+            <div class="info-row">
+                <div class="info-label"><i class="fa fa-id-card me-1"></i>Full Name</div>
+                <div class="info-value">{{ profile.name }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fa fa-user me-1"></i>Username</div>
+                <div class="info-value text-cyan">@{{ user.username }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fa fa-envelope me-1"></i>Email</div>
+                <div class="info-value">{{ profile.email }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fa fa-phone me-1"></i>Phone</div>
+                <div class="info-value">{{ profile.phone }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fa fa-location-dot me-1"></i>Address</div>
+                <div class="info-value" style="white-space:pre-wrap;">{{ profile.address }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fa fa-calendar me-1"></i>Registered At</div>
+                <div class="info-value" style="color:#8ba5c0;">{{ profile.created_at|date:"d F Y, H:i" }}</div>
+            </div>
+        </div>
+
+        <!-- Edit Profile Form -->
+        <div class="card p-4">
+            <h5 class="text-cyan mb-3" style="font-size:0.9rem;"><i class="fa fa-pen-to-square me-2"></i>EDIT DETAILS</h5>
+            <form method="POST" action="/user_profile/" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="fa fa-id-card me-1"></i>Full Name</label>
+                        <input class="form-control" type="text" name="name" value="{{ profile.name }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="fa fa-phone me-1"></i>Phone</label>
+                        <input class="form-control" type="text" name="phone" value="{{ profile.phone }}" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label"><i class="fa fa-location-dot me-1"></i>Address</label>
+                        <textarea class="form-control" name="address" rows="2" required>{{ profile.address }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label"><i class="fa fa-image me-1"></i>Update Profile Picture</label>
+                        <input class="form-control" type="file" name="profile_image" accept="image/*">
+                    </div>
+                </div>
+                <button type="submit" class="btn-cyber-solid">
+                    <i class="fa fa-floppy-disk me-2"></i>Save Changes
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
