@@ -45,7 +45,10 @@ urlpatterns = [
         'verification_history/',
         views.verification_history
     ),
-
+    path('admin_alerts/', views.admin_alerts),
+    path('admin_review/<int:evidence_id>/', views.admin_review_evidence),
+    path('admin_approve/<int:evidence_id>/', views.admin_approve_evidence),
+    path('admin_reject/<int:evidence_id>/', views.admin_reject_evidence),
 ]
 
 urlpatterns += static(
