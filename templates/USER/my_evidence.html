@@ -47,6 +47,10 @@
                     <td>
                         {% if item.status == 'Verified' %}
                             <span class="badge-verified"><i class="fa fa-check me-1"></i>Verified</span>
+                        {% elif item.status == 'Approved' %}
+                            <span class="badge-approved"><i class="fa fa-circle-check me-1"></i>Approved</span>
+                        {% elif item.status == 'Rejected' %}
+                            <span class="badge-rejected"><i class="fa fa-circle-xmark me-1"></i>Rejected</span>
                         {% elif item.status == 'Tampered' %}
                             <span class="badge-tampered"><i class="fa fa-triangle-exclamation me-1"></i>Tampered</span>
                         {% else %}
