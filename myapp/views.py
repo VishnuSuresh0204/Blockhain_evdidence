@@ -73,16 +73,17 @@ def registration(request):
         phone = request.POST.get('phone')
         address = request.POST.get('address')
         password = request.POST.get('password')
+        profile_image = request.FILES.get('profile_image')
 
         if Login.objects.filter(username=username).exists():
             messages.error(request, 'Username already exists')
-            return redirect('registration')
+            return redirect('/registration')
 
         if Login.objects.filter(email=email).exists():
             messages.error(request, 'Email already exists')
-            return redirect('registration')
+            return redirect('/registration')
 
-        user = Login.objects.create(
+        user = Login.objects.create_user(
             username=username,
             email=email,
             password=password,
@@ -95,11 +96,400 @@ def registration(request):
             name=name,
             email=email,
             phone=phone,
-            address=address
+            address=address,
+            profile_image=profile_image
         )
 
         messages.success(request, 'Registration completed successfully')
 
-        return redirect('login')
+        return redirect('/login')
 
     return render(request, 'registration.html')
+
+
+# ---------------------------------------------------------
+# USER PROFILE
+# ---------------------------------------------------------
+
+def user_profile(request):
+
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    userid = request.session.get('userid')
+
+    user = Login.objects.get(id=userid)
+
+    profile = Registration.objects.get(user=user)
+
+    if request.method == 'POST':
+        if 'profile_image' in request.FILES:
+            profile.profile_image = request.FILES['profile_image']
+
+        name = request.POST.get('name')
+        phone = request.POST.get('phone')
+        address = request.POST.get('address')
+
+        if name:
+            profile.name = name
+        if phone:
+            profile.phone = phone
+        if address:
+            profile.address = address
+
+        profile.save()
+        messages.success(request, 'Profile updated successfully!')
+        return redirect('/user_profile/')
+
+    return render(
+        request,
+        "USER/profile.html",
+        {
+            'user': user,
+            'profile': profile
+        }
+    )
+
+
+# ---------------------------------------------------------
+# ADMIN - VIEW USERS
+# ---------------------------------------------------------
+
+def view_users(request):
+
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    if request.session.get('usertype') != 'Admin':
+        return redirect('/login')
+
+    users = Registration.objects.all().order_by('-id')
+
+    return render(
+        request,
+        "ADMIN/view_users.html",
+        {
+            'users': users
+        }
+    )
+
+
+# ---------------------------------------------------------
+# USER - UPLOAD EVIDENCE
+# ---------------------------------------------------------
+
+def upload_evidence(request):
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    if request.session.get('usertype') != 'User':
+        return redirect('/login')
+
+    if request.method == 'POST':
+        userid = request.session.get('userid')
+
+        evidence_title = request.POST.get('evidence_title')
+        description = request.POST.get('description')
+        category = request.POST.get('category')
+        evidence_file = request.FILES.get('evidence_file')
+
+        if not evidence_file:
+            messages.error(
+                request,
+                'Please select an evidence file'
+            )
+            return redirect('/upload_evidence')
+
+        import hashlib
+
+        sha256_hash = hashlib.sha256()
+
+        for chunk in evidence_file.chunks():
+            sha256_hash.update(chunk)
+
+        file_hash = sha256_hash.hexdigest()
+
+        existing_evidence = DigitalEvidence.objects.filter(
+            file_hash=file_hash
+        ).first()
+
+        if existing_evidence:
+            messages.error(
+                request,
+                'Duplicate evidence detected. '
+                'This file has already been uploaded.'
+            )
+            return redirect('/upload_evidence')
+
+        user = Login.objects.get(id=userid)
+
+        evidence = DigitalEvidence.objects.create(
+            user=user,
+            evidence_title=evidence_title,
+            description=description,
+            category=category,
+            evidence_file=evidence_file,
+            file_hash=file_hash,
+            status='Pending'
+        )
+
+        create_blockchain_block(evidence)
+
+        messages.success(
+            request,
+            'Evidence uploaded successfully'
+        )
+
+        return redirect('/my_evidence')
+
+    return render(
+        request,
+        "USER/upload_evidence.html"
+    )
+
+
+# ---------------------------------------------------------
+# CREATE BLOCKCHAIN BLOCK
+# ---------------------------------------------------------
+
+def create_blockchain_block(evidence):
+
+    import hashlib
+    import json
+    from datetime import datetime
+
+    last_block = BlockchainBlock.objects.order_by(
+        '-block_index'
+    ).first()
+
+    if last_block:
+
+        block_index = last_block.block_index + 1
+        previous_hash = last_block.current_hash
+
+    else:
+
+        block_index = 1
+        previous_hash = '0' * 64
+
+    transaction_data = {
+        'evidence_id': evidence.id,
+        'evidence_title': evidence.evidence_title,
+        'file_hash': evidence.file_hash,
+        'timestamp': datetime.now().isoformat()
+    }
+
+    transaction_string = json.dumps(
+        transaction_data,
+        sort_keys=True
+    )
+
+    block_data = (
+        str(block_index) +
+        transaction_string +
+        previous_hash
+    )
+
+    current_hash = hashlib.sha256(
+        block_data.encode()
+    ).hexdigest()
+
+    BlockchainBlock.objects.create(
+        block_index=block_index,
+        evidence=evidence,
+        transaction_data=transaction_string,
+        previous_hash=previous_hash,
+        current_hash=current_hash
+    )
+
+
+# ---------------------------------------------------------
+# USER - MY EVIDENCE
+# ---------------------------------------------------------
+
+def my_evidence(request):
+
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    if request.session.get('usertype') != 'User':
+        return redirect('/login')
+
+    userid = request.session.get('userid')
+
+    evidence = DigitalEvidence.objects.filter(
+        user_id=userid
+    ).order_by('-id')
+
+    return render(
+        request,
+        "USER/my_evidence.html",
+        {
+            'evidence': evidence
+        }
+    )
+
+
+# ---------------------------------------------------------
+# USER / ADMIN - EVIDENCE DETAILS
+# ---------------------------------------------------------
+
+def evidence_details(request, evidence_id):
+
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    evidence = DigitalEvidence.objects.get(
+        id=evidence_id
+    )
+
+    blocks = BlockchainBlock.objects.filter(
+        evidence=evidence
+    ).order_by('block_index')
+
+    return render(
+        request,
+        "USER/evidence_details.html",
+        {
+            'evidence': evidence,
+            'blocks': blocks
+        }
+    )
+
+
+# ---------------------------------------------------------
+# VERIFY EVIDENCE
+# ---------------------------------------------------------
+
+def verify_evidence(request, evidence_id):
+
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    if request.session.get('usertype') != 'User':
+        return redirect('/login')
+
+    userid = request.session.get('userid')
+
+    evidence = DigitalEvidence.objects.get(
+        id=evidence_id,
+        user_id=userid
+    )
+
+    import hashlib
+
+    sha256_hash = hashlib.sha256()
+
+    with evidence.evidence_file.open('rb') as file:
+
+        for chunk in iter(
+            lambda: file.read(4096),
+            b''
+        ):
+            sha256_hash.update(chunk)
+
+    calculated_hash = sha256_hash.hexdigest()
+
+    original_hash = evidence.file_hash
+
+    if calculated_hash == original_hash:
+
+        result = 'Verified'
+        evidence.status = 'Verified'
+
+    else:
+
+        result = 'Tampered'
+        evidence.status = 'Tampered'
+
+    evidence.save()
+
+    EvidenceVerification.objects.create(
+        evidence=evidence,
+        verified_by_id=userid,
+        original_hash=original_hash,
+        calculated_hash=calculated_hash,
+        result=result
+    )
+
+    messages.success(
+        request,
+        'Evidence verification result: ' + result
+    )
+
+    return redirect(
+        '/evidence_details/' + str(evidence.id)
+    )
+
+
+# ---------------------------------------------------------
+# ADMIN - ALL EVIDENCE
+# ---------------------------------------------------------
+
+def admin_evidence(request):
+
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    if request.session.get('usertype') != 'Admin':
+        return redirect('/login')
+
+    evidence = DigitalEvidence.objects.all().order_by('-id')
+
+    return render(
+        request,
+        "ADMIN/evidence.html",
+        {
+            'evidence': evidence
+        }
+    )
+
+
+# ---------------------------------------------------------
+# ADMIN - BLOCKCHAIN RECORDS
+# ---------------------------------------------------------
+
+def blockchain_records(request):
+
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    if request.session.get('usertype') != 'Admin':
+        return redirect('/login')
+
+    blocks = BlockchainBlock.objects.all().order_by(
+        'block_index'
+    )
+
+    return render(
+        request,
+        "ADMIN/blockchain.html",
+        {
+            'blocks': blocks
+        }
+    )
+
+
+# ---------------------------------------------------------
+# ADMIN - VERIFICATION HISTORY
+# ---------------------------------------------------------
+
+def verification_history(request):
+
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    if request.session.get('usertype') != 'Admin':
+        return redirect('/login')
+
+    verifications = EvidenceVerification.objects.all().order_by(
+        '-id'
+    )
+
+    return render(
+        request,
+        "ADMIN/verification_history.html",
+        {
+            'verifications': verifications
+        }
+    )
