@@ -1,51 +1,105 @@
-{% extends 'base.html' %}
-
-{% block title %}Admin Dashboard - My App{% endblock %}
-
+{% extends 'ADMIN/admin_base.html' %}
+{% block nav_dash %}active{% endblock %}
+{% block title %}Admin Dashboard — E-Vidence{% endblock %}
 {% block content %}
-<div class="row mt-5">
-    <div class="col-12">
-        <div class="card shadow-sm border-danger border-2">
-            <div class="card-body">
-                <h2 class="card-title text-danger fw-bold">Admin Control Panel</h2>
-                <hr class="border-light">
-                <p class="card-text text-light fs-5">Administrator Access: {{ request.session.username }}</p>
-                <div class="row mt-4">
-                    <div class="col-md-3 mb-4">
-                        <div class="card bg-danger text-white h-100 border-0 shadow">
-                            <div class="card-body py-4 text-center">
-                                <h4 class="mb-3">Total Users</h4>
-                                <h2 class="fw-bold">150+</h2>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-4">
-                        <div class="card bg-warning text-dark h-100 border-0 shadow">
-                            <div class="card-body py-4 text-center">
-                                <h4 class="mb-3">Pending Requests</h4>
-                                <h2 class="fw-bold">12</h2>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-4">
-                        <div class="card bg-success text-white h-100 border-0 shadow">
-                            <div class="card-body py-4 text-center">
-                                <h4 class="mb-3">System Health</h4>
-                                <h2 class="fw-bold">Good</h2>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-4">
-                        <div class="card bg-secondary text-white h-100 border-0 shadow">
-                            <div class="card-body py-4 text-center">
-                                <h4 class="mb-3">Reports</h4>
-                                <h2 class="fw-bold">View</h2>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
+<div class="page-header">
+    <h2><i class="fa fa-gauge me-2"></i>Admin Control Center</h2>
+    <p>Logged in as <strong class="text-cyan">{{ request.session.username }}</strong> — Full network oversight and audit access.</p>
+</div>
+
+<!-- Overview image -->
+<div class="card mb-4 p-0 overflow-hidden" style="border-color:rgba(239,68,68,0.2);">
+    <img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1400&auto=format&fit=crop"
+         alt="Network Monitor" class="img-fluid w-100" style="height:180px;object-fit:cover;object-position:center 60%;opacity:0.6;">
+    <div class="p-3 d-flex align-items-center justify-content-between" style="background:rgba(0,0,0,0.5);margin-top:-4px;">
+        <div style="font-size:0.85rem;color:#8ba5c0;"><i class="fa fa-circle" style="color:#10b981;font-size:0.5rem;margin-right:6px;vertical-align:middle;"></i>All systems operational — blockchain ledger is intact</div>
+        <span class="badge-verified"><i class="fa fa-check me-1"></i>Ledger Healthy</span>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <a href="/view_users/" style="text-decoration:none;">
+            <div class="stat-card cyan">
+                <div class="stat-icon cyan"><i class="fa fa-users"></i></div>
+                <div class="stat-value text-cyan">—</div>
+                <div class="stat-label">Registered Users</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="/admin_evidence/" style="text-decoration:none;">
+            <div class="stat-card magenta">
+                <div class="stat-icon magenta"><i class="fa fa-folder-open"></i></div>
+                <div class="stat-value text-magenta">—</div>
+                <div class="stat-label">Total Evidence</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="/blockchain_records/" style="text-decoration:none;">
+            <div class="stat-card green">
+                <div class="stat-icon green"><i class="fa fa-cube"></i></div>
+                <div class="stat-value text-green">—</div>
+                <div class="stat-label">Blockchain Blocks</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="/verification_history/" style="text-decoration:none;">
+            <div class="stat-card red">
+                <div class="stat-icon red"><i class="fa fa-clock-rotate-left"></i></div>
+                <div class="stat-value" style="color:#ef4444;">—</div>
+                <div class="stat-label">Verifications Run</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Admin quick actions -->
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h6 class="text-cyan mb-3" style="font-size:0.85rem;"><i class="fa fa-bolt me-2"></i>QUICK ACTIONS</h6>
+            <div class="d-flex flex-column gap-2">
+                <a href="/view_users/" class="btn-cyber" style="display:block;text-align:left;padding:0.6rem 1rem;font-size:0.88rem;">
+                    <i class="fa fa-users me-2"></i>Manage Users Directory
+                </a>
+                <a href="/admin_evidence/" class="btn-cyber magenta" style="display:block;text-align:left;padding:0.6rem 1rem;font-size:0.88rem;">
+                    <i class="fa fa-folder-open me-2"></i>View All Evidence Registry
+                </a>
+                <a href="/blockchain_records/" class="btn-cyber green" style="display:block;text-align:left;padding:0.6rem 1rem;font-size:0.88rem;">
+                    <i class="fa fa-link me-2"></i>Inspect Blockchain Ledger
+                </a>
+                <a href="/verification_history/" style="display:block;text-align:left;padding:0.6rem 1rem;font-size:0.88rem;color:#f59e0b;border:1px solid rgba(245,158,11,0.4);border-radius:8px;background:rgba(245,158,11,0.08);font-weight:600;font-family:Inter,sans-serif;transition:all 0.2s;">
+                    <i class="fa fa-clock-rotate-left me-2"></i>View Verification Audit Log
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4" style="height:100%;">
+            <h6 class="text-cyan mb-3" style="font-size:0.85rem;"><i class="fa fa-shield-halved me-2"></i>SYSTEM OVERVIEW</h6>
+            <div class="info-row">
+                <div class="info-label">Blockchain Type</div>
+                <div class="info-value">Append-only linked list</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Hash Algorithm</div>
+                <div class="info-value text-cyan">SHA-256</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Chain Status</div>
+                <div class="info-value"><span class="badge-verified"><i class="fa fa-check me-1"></i>Intact</span></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Admin Role</div>
+                <div class="info-value" style="color:#ef4444;font-weight:600;">ADMIN</div>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
