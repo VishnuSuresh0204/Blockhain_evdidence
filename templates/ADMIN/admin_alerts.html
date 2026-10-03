@@ -1,0 +1,150 @@
+{% extends 'ADMIN/admin_base.html' %}
+{% block nav_alerts %}active{% endblock %}
+{% block title %}Tampered Evidence & Alerts — E-Vidence Admin{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h2><i class="fa fa-bell text-warning me-2"></i>Tampered & Modified Evidence Review</h2>
+        <p>Review and audit images flagged by perceptual hash (pHash) and ORB feature similarity matching. Total: <strong class="text-cyan">{{ alerts|length }}</strong> alert(s).</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/admin_evidence/" class="btn-cyber" style="font-size:0.85rem;padding:0.5rem 1rem;">
+            <i class="fa fa-folder-open me-1"></i>All Evidence Registry
+        </a>
+    </div>
+</div>
+
+<!-- Info Banner -->
+<div class="alert alert-cyber-warning mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2" role="alert">
+    <div>
+        <i class="fa fa-shield-halved text-warning me-2"></i>
+        <strong>Forensic Integrity Pipeline Active:</strong> Exact duplicates are blocked via SHA-256. Similar, cropped, or modified images are captured, flagged with their source original, and queued here for Administrator Approval or Rejection.
+    </div>
+    <span class="badge-modified"><i class="fa fa-fingerprint me-1"></i>pHash + ORB Active</span>
+</div>
+
+<!-- Alerts Table -->
+<div class="card p-0">
+    <div class="table-responsive">
+        <table class="cyber-table">
+            <thead>
+                <tr>
+                    <th style="width:85px;">Alert ID</th>
+                    <th style="min-width:240px;">Tampered / Modified Submission</th>
+                    <th style="min-width:240px;">Original Source Evidence</th>
+                    <th>Status</th>
+                    <th>Date / Time</th>
+                    <th style="min-width:190px;text-align:right;">Admin Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for alert in alerts %}
+                <tr>
+                    <td>
+                        <span style="font-family:monospace;color:#f59e0b;font-weight:600;font-size:0.85rem;">ALT-{{ alert.id }}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if alert.evidence.evidence_file and alert.evidence.category == 'Image' %}
+                                <a href="{{ alert.evidence.evidence_file.url }}" target="_blank" title="Click to view full image">
+                                    <img src="{{ alert.evidence.evidence_file.url }}" alt="{{ alert.evidence.evidence_title }}" style="width:58px;height:58px;object-fit:cover;border-radius:8px;border:1px solid rgba(239,68,68,0.6);box-shadow:0 0 10px rgba(239,68,68,0.2);">
+                                </a>
+                            {% else %}
+                                <span style="font-size:1.8rem;color:#8ba5c0;opacity:0.4;"><i class="fa fa-file"></i></span>
+                            {% endif %}
+                            <div>
+                                <a href="/admin_review/{{ alert.evidence.id }}/" style="font-weight:600;color:#fff;text-decoration:none;font-size:0.92rem;">
+                                    #{{ alert.evidence.id }} — {{ alert.evidence.evidence_title }}
+                                </a>
+                                <div style="font-size:0.8rem;color:#ef4444;margin-top:2px;">
+                                    Uploaded by: <strong>@{{ alert.evidence.user.username }}</strong>
+                                    {% if alert.evidence.uploader_profile %}
+                                        <span style="color:#8ba5c0;">({{ alert.evidence.uploader_profile.name }})</span>
+                                    {% endif %}
+                                </div>
+                                <div style="font-size:0.72rem;color:#8ba5c0;font-family:monospace;margin-top:2px;">
+                                    Hash: {{ alert.evidence.file_hash|slice:":18" }}…
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if alert.evidence.modified_from %}
+                        <div class="d-flex align-items-center gap-3">
+                            {% if alert.evidence.modified_from.evidence_file and alert.evidence.modified_from.category == 'Image' %}
+                                <a href="{{ alert.evidence.modified_from.evidence_file.url }}" target="_blank" title="Click to view original image">
+                                    <img src="{{ alert.evidence.modified_from.evidence_file.url }}" alt="{{ alert.evidence.modified_from.evidence_title }}" style="width:58px;height:58px;object-fit:cover;border-radius:8px;border:1px solid rgba(16,185,129,0.6);box-shadow:0 0 10px rgba(16,185,129,0.2);">
+                                </a>
+                            {% else %}
+                                <span style="font-size:1.8rem;color:#8ba5c0;opacity:0.4;"><i class="fa fa-file"></i></span>
+                            {% endif %}
+                            <div>
+                                <a href="/admin_review/{{ alert.evidence.id }}/" style="color:#10b981;font-weight:600;text-decoration:none;font-size:0.92rem;">
+                                    <i class="fa fa-link me-1"></i>#{{ alert.evidence.modified_from.id }} — {{ alert.evidence.modified_from.evidence_title }}
+                                </a>
+                                <div style="font-size:0.8rem;color:#10b981;margin-top:2px;">
+                                    Uploaded by: <strong>@{{ alert.evidence.modified_from.user.username }}</strong>
+                                    {% if alert.evidence.modified_from.uploader_profile %}
+                                        <span style="color:#8ba5c0;">({{ alert.evidence.modified_from.uploader_profile.name }})</span>
+                                    {% endif %}
+                                </div>
+                                <div style="font-size:0.72rem;color:#8ba5c0;font-family:monospace;margin-top:2px;">
+                                    Uploaded: {{ alert.evidence.modified_from.uploaded_at|date:"d M Y" }}
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <span style="color:#8ba5c0;font-size:0.85rem;">— No linked original —</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if alert.evidence.status == 'Approved' %}
+                            <span class="badge-approved"><i class="fa fa-check me-1"></i>Approved</span>
+                        {% elif alert.evidence.status == 'Rejected' %}
+                            <span class="badge-rejected"><i class="fa fa-xmark me-1"></i>Rejected</span>
+                        {% elif alert.evidence.status == 'Verified' %}
+                            <span class="badge-verified"><i class="fa fa-shield-check me-1"></i>Verified</span>
+                        {% else %}
+                            <span class="badge-pending"><i class="fa fa-clock me-1"></i>Pending Review</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:#8ba5c0;font-size:0.82rem;white-space:nowrap;">
+                        {{ alert.created_at|date:"d M Y" }}<br>
+                        <span style="font-size:0.75rem;opacity:0.8;">{{ alert.created_at|date:"H:i:s" }}</span>
+                    </td>
+                    <td style="text-align:right;">
+                        <div class="d-inline-flex gap-2 align-items-center">
+                            <a href="/admin_review/{{ alert.evidence.id }}/" class="btn-cyber" style="padding:5px 12px;font-size:0.8rem;white-space:nowrap;">
+                                <i class="fa fa-magnifying-glass me-1"></i>Compare
+                            </a>
+                            {% if alert.evidence.status != 'Approved' %}
+                            <a href="/admin_approve/{{ alert.evidence.id }}/?next=/admin_alerts/" class="btn-approve" style="padding:5px 10px;font-size:0.78rem;" title="Approve" onclick="return confirm('Approve evidence #{{ alert.evidence.id }}?');">
+                                <i class="fa fa-check"></i>
+                            </a>
+                            {% endif %}
+                            {% if alert.evidence.status != 'Rejected' %}
+                            <a href="/admin_reject/{{ alert.evidence.id }}/?next=/admin_alerts/" class="btn-reject" style="padding:5px 10px;font-size:0.78rem;" title="Reject" onclick="return confirm('Reject evidence #{{ alert.evidence.id }}?');">
+                                <i class="fa fa-ban"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:3.5rem;color:#8ba5c0;">
+                        <i class="fa fa-shield-check text-green" style="font-size:3rem;margin-bottom:1rem;display:block;opacity:0.7;"></i>
+                        <h5 style="color:#fff;font-size:1.1rem;margin-bottom:0.5rem;">No Tampered or Modified Evidence Alerts</h5>
+                        <p style="font-size:0.85rem;max-width:450px;margin:0 auto;line-height:1.6;">
+                            When users upload images that match or crop previously uploaded evidence, they will be intercepted by pHash + ORB and queued here for administrator decision.
+                        </p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
