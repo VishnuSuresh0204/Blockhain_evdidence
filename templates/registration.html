@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - My App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-lg border-0 rounded-lg">
+            <div class="card-header text-center">
+                <h3 class="font-weight-light my-4">Create Account</h3>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form method="POST" action="{% url 'registration' %}">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="form-floating mb-3 mb-md-0">
+                                <input class="form-control" id="inputName" type="text" name="name" placeholder="Enter your full name" required />
+                                <label for="inputName" class="text-secondary">Full Name</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input class="form-control" id="inputUsername" type="text" name="username" placeholder="Choose a username" required />
+                                <label for="inputUsername" class="text-secondary">Username</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        <input class="form-control" id="inputEmail" type="email" name="email" placeholder="name@example.com" required />
+                        <label for="inputEmail" class="text-secondary">Email address</label>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="form-floating mb-3 mb-md-0">
+                                <input class="form-control" id="inputPhone" type="text" name="phone" placeholder="Enter your phone number" required />
+                                <label for="inputPhone" class="text-secondary">Phone Number</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3 mb-md-0">
+                                <input class="form-control" id="inputPassword" type="password" name="password" placeholder="Create a password" required />
+                                <label for="inputPassword" class="text-secondary">Password</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <textarea class="form-control" id="inputAddress" name="address" placeholder="Enter your address" style="height: 100px" required></textarea>
+                        <label for="inputAddress" class="text-secondary">Address</label>
+                    </div>
+
+                    <div class="mt-4 mb-0">
+                        <div class="d-grid"><button class="btn btn-primary btn-block py-2" type="submit">Create Account</button></div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3">
+                <div class="small"><a href="/login" class="text-light">Have an account? Go to login</a></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
