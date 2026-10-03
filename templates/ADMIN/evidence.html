@@ -32,6 +32,11 @@
                     <td>
                         <div style="font-weight:500;color:#fff;">{{ item.evidence_title }}</div>
                         <div style="font-size:0.75rem;color:#8ba5c0;font-family:monospace;margin-top:2px;">{{ item.file_hash|slice:":20" }}…</div>
+                        {% if item.is_modified %}
+                            <div class="mt-1">
+                                <span class="badge-modified" style="font-size:0.7rem;padding:2px 8px;"><i class="fa fa-fingerprint me-1"></i>Modified from #{{ item.modified_from_id }}</span>
+                            </div>
+                        {% endif %}
                     </td>
                     <td>
                         <span style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.25);color:#00d4ff;font-size:0.75rem;padding:3px 10px;border-radius:20px;">{{ item.category }}</span>
@@ -39,6 +44,10 @@
                     <td>
                         {% if item.status == 'Verified' %}
                             <span class="badge-verified"><i class="fa fa-check me-1"></i>Verified</span>
+                        {% elif item.status == 'Approved' %}
+                            <span class="badge-approved"><i class="fa fa-circle-check me-1"></i>Approved</span>
+                        {% elif item.status == 'Rejected' %}
+                            <span class="badge-rejected"><i class="fa fa-circle-xmark me-1"></i>Rejected</span>
                         {% elif item.status == 'Tampered' %}
                             <span class="badge-tampered"><i class="fa fa-triangle-exclamation me-1"></i>Tampered</span>
                         {% else %}
@@ -47,9 +56,16 @@
                     </td>
                     <td style="color:#8ba5c0;font-size:0.82rem;">{{ item.uploaded_at|date:"d M Y, H:i" }}</td>
                     <td>
-                        <a href="/evidence_details/{{ item.id }}/" class="btn-cyber" style="padding:5px 14px;font-size:0.8rem;">
-                            <i class="fa fa-eye me-1"></i>View
-                        </a>
+                        <div class="d-flex gap-1">
+                            {% if item.is_modified %}
+                                <a href="/admin_review/{{ item.id }}/" class="btn-cyber" style="padding:5px 10px;font-size:0.78rem;color:#f59e0b;border-color:rgba(245,158,11,0.5);">
+                                    <i class="fa fa-shield-virus me-1"></i>Review
+                                </a>
+                            {% endif %}
+                            <a href="/evidence_details/{{ item.id }}/" class="btn-cyber" style="padding:5px 12px;font-size:0.78rem;">
+                                <i class="fa fa-eye me-1"></i>View
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
