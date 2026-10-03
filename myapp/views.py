@@ -12,7 +12,33 @@ def user_home(request):
 
 
 def admin_home(request):
-    return render(request,"ADMIN/home.html")
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    if request.session.get('usertype') != 'Admin':
+        return redirect('/login')
+
+    total_users = Registration.objects.count()
+    total_evidence = DigitalEvidence.objects.count()
+    total_blocks = BlockchainBlock.objects.count()
+    total_verifications = EvidenceVerification.objects.count()
+    pending_alerts_count = AdminAlert.objects.filter(is_read=False).count()
+    pending_reviews_count = DigitalEvidence.objects.filter(is_modified=True, status='Pending').count()
+    recent_alerts = AdminAlert.objects.select_related('evidence', 'evidence__user', 'evidence__modified_from').all().order_by('-id')[:5]
+
+    return render(
+        request,
+        "ADMIN/home.html",
+        {
+            'total_users': total_users,
+            'total_evidence': total_evidence,
+            'total_blocks': total_blocks,
+            'total_verifications': total_verifications,
+            'pending_alerts_count': pending_alerts_count,
+            'pending_reviews_count': pending_reviews_count,
+            'recent_alerts': recent_alerts,
+        }
+    )
 
 
 def login(request):
@@ -177,7 +203,12 @@ def view_users(request):
 # ---------------------------------------------------------
 # USER - UPLOAD EVIDENCE
 # ---------------------------------------------------------
+# ---------------------------------------------------------
+# USER - UPLOAD EVIDENCE
+# ---------------------------------------------------------
+
 def upload_evidence(request):
+
     if 'userid' not in request.session:
         return redirect('/login')
 
@@ -215,7 +246,6 @@ def upload_evidence(request):
 
         # --------------------------------
         # EXACT DUPLICATE CHECK
-        # Checks ALL USERS
         # --------------------------------
 
         existing_evidence = DigitalEvidence.objects.filter(
@@ -227,7 +257,7 @@ def upload_evidence(request):
             messages.error(
                 request,
                 'Duplicate evidence detected! '
-                'This exact file was already uploaded. '
+                'This exact file has already been uploaded. '
                 'Previous Evidence: ' +
                 existing_evidence.evidence_title +
                 ' | Uploaded On: ' +
@@ -239,11 +269,18 @@ def upload_evidence(request):
             return redirect('/upload_evidence')
 
         # --------------------------------
-        # IMAGE pHASH CHECK
-        # Checks ALL USERS
+        # MODIFICATION VARIABLES
         # --------------------------------
 
         image_hash = None
+
+        is_modified = False
+
+        modified_from = None
+
+        # --------------------------------
+        # IMAGE DETECTION
+        # --------------------------------
 
         if category == 'Image':
 
@@ -251,22 +288,63 @@ def upload_evidence(request):
 
                 from PIL import Image
                 import imagehash
+                import cv2
+                import numpy as np
 
-                # Generate pHash
-                image = Image.open(evidence_file)
+                # Reset uploaded file
+                evidence_file.seek(0)
 
-                image_hash = str(
-                    imagehash.phash(image)
+                image = Image.open(
+                    evidence_file
+                ).convert('RGB')
+
+                # --------------------------------
+                # pHASH
+                # --------------------------------
+
+                phash = imagehash.phash(
+                    image
                 )
 
-                new_hash = imagehash.hex_to_hash(
-                    image_hash
+                image_hash = str(
+                    phash
+                )
+
+                # --------------------------------
+                # ORB
+                # --------------------------------
+
+                evidence_file.seek(0)
+
+                image_bytes = np.frombuffer(
+                    evidence_file.read(),
+                    np.uint8
+                )
+
+                new_image = cv2.imdecode(
+                    image_bytes,
+                    cv2.IMREAD_GRAYSCALE
+                )
+
+                orb = cv2.ORB_create(
+                    nfeatures=1500
+                )
+
+                new_keypoints, new_descriptors = (
+                    orb.detectAndCompute(
+                        new_image,
+                        None
+                    )
                 )
 
                 similar_evidence = None
-                similarity_difference = None
+                best_match_count = 0
+                best_phash_difference = None
 
-                # Get ALL previously uploaded images
+                # --------------------------------
+                # GET ALL PREVIOUS IMAGES
+                # --------------------------------
+
                 previous_images = DigitalEvidence.objects.filter(
                     category='Image'
                 ).exclude(
@@ -275,22 +353,122 @@ def upload_evidence(request):
                     image_hash=''
                 )
 
-                # Compare with every previous image
+                # --------------------------------
+                # COMPARE WITH PREVIOUS IMAGES
+                # --------------------------------
+
                 for old_image in previous_images:
 
-                    old_hash = imagehash.hex_to_hash(
-                        old_image.image_hash
-                    )
+                    try:
 
-                    difference = old_hash - new_hash
+                        old_file = (
+                            old_image.evidence_file.open(
+                                'rb'
+                            )
+                        )
 
-                    # Stronger threshold
-                    if difference <= 15:
+                        old_bytes = np.frombuffer(
+                            old_file.read(),
+                            np.uint8
+                        )
 
-                        similar_evidence = old_image
-                        similarity_difference = difference
+                        old_file.close()
 
-                        break
+                        old_cv_image = cv2.imdecode(
+                            old_bytes,
+                            cv2.IMREAD_GRAYSCALE
+                        )
+
+                        if old_cv_image is None:
+                            continue
+
+                        old_keypoints, old_descriptors = (
+                            orb.detectAndCompute(
+                                old_cv_image,
+                                None
+                            )
+                        )
+
+                        if (
+                            new_descriptors is None
+                            or
+                            old_descriptors is None
+                        ):
+                            continue
+
+                        # --------------------------------
+                        # MATCH FEATURES
+                        # --------------------------------
+
+                        matcher = cv2.BFMatcher(
+                            cv2.NORM_HAMMING,
+                            crossCheck=True
+                        )
+
+                        matches = matcher.match(
+                            new_descriptors,
+                            old_descriptors
+                        )
+
+                        matches = sorted(
+                            matches,
+                            key=lambda x: x.distance
+                        )
+
+                        # Good matches
+                        good_matches = [
+                            match
+                            for match in matches
+                            if match.distance < 50
+                        ]
+
+                        match_count = len(
+                            good_matches
+                        )
+
+                        # --------------------------------
+                        # pHASH CHECK
+                        # --------------------------------
+
+                        old_phash = imagehash.hex_to_hash(
+                            old_image.image_hash
+                        )
+
+                        phash_difference = (
+                            old_phash - phash
+                        )
+
+                        # --------------------------------
+                        # DETECTION
+                        # --------------------------------
+
+                        if (
+                            match_count >= 15
+                            or
+                            phash_difference <= 10
+                        ):
+
+                            if (
+                                similar_evidence is None
+                                or
+                                match_count >
+                                best_match_count
+                            ):
+
+                                similar_evidence = (
+                                    old_image
+                                )
+
+                                best_match_count = (
+                                    match_count
+                                )
+
+                                best_phash_difference = (
+                                    phash_difference
+                                )
+
+                    except Exception:
+                        continue
 
                 # --------------------------------
                 # MODIFIED IMAGE DETECTED
@@ -298,58 +476,102 @@ def upload_evidence(request):
 
                 if similar_evidence:
 
-                    messages.error(
-                        request,
-                        'Modified image detected! '
-                        'This image appears to be a modified '
-                        'or cropped version of previously uploaded evidence. '
-                        'Previous Evidence: ' +
-                        similar_evidence.evidence_title +
-                        ' | Uploaded On: ' +
-                        similar_evidence.uploaded_at.strftime(
-                            '%d-%m-%Y %I:%M %p'
-                        ) +
-                        ' | Similarity Distance: ' +
-                        str(similarity_difference)
+                    is_modified = True
+
+                    modified_from = (
+                        similar_evidence
                     )
 
-                    return redirect('/upload_evidence')
-
-            except Exception as e:
+            except Exception:
 
                 image_hash = None
 
         # --------------------------------
-        # CREATE NEW EVIDENCE
+        # GET USER
         # --------------------------------
 
         user = Login.objects.get(
             id=userid
         )
 
+        # --------------------------------
+        # CREATE EVIDENCE
+        # --------------------------------
+
         evidence = DigitalEvidence.objects.create(
+
             user=user,
+
             evidence_title=evidence_title,
+
             description=description,
+
             category=category,
+
             evidence_file=evidence_file,
+
             file_hash=file_hash,
+
             image_hash=image_hash,
+
+            is_modified=is_modified,
+
+            modified_from=modified_from,
+
             status='Pending'
         )
 
         # --------------------------------
-        # CREATE BLOCKCHAIN BLOCK
+        # BLOCKCHAIN
         # --------------------------------
 
         create_blockchain_block(
             evidence
         )
 
-        messages.success(
-            request,
-            'Evidence uploaded successfully'
-        )
+        # --------------------------------
+        # SEND FOR ADMIN REVIEW IF MODIFIED
+        # --------------------------------
+
+        if is_modified and modified_from:
+
+            AdminAlert.objects.create(
+                evidence=evidence,
+                message=(
+                    'Modified/Cropped evidence uploaded. Evidence "' +
+                    evidence.evidence_title +
+                    '" uploaded by @' +
+                    user.username +
+                    ' appears to be a modified version of "' +
+                    modified_from.evidence_title +
+                    '" uploaded by @' +
+                    modified_from.user.username +
+                    '. Sent for administrator review.'
+                )
+            )
+
+        # --------------------------------
+        # USER MESSAGE
+        # --------------------------------
+
+        if is_modified:
+
+            messages.warning(
+                request,
+                'Evidence uploaded successfully, but this image '
+                'appears to be a cropped or modified version of '
+                'previously uploaded evidence: ' +
+                modified_from.evidence_title +
+                '. The evidence has been flagged for '
+                'administrator review.'
+            )
+
+        else:
+
+            messages.success(
+                request,
+                'Evidence uploaded successfully'
+            )
 
         return redirect('/my_evidence')
 
@@ -467,7 +689,6 @@ def evidence_details(request, evidence_id):
         }
     )
 
-
 # ---------------------------------------------------------
 # VERIFY EVIDENCE
 # ---------------------------------------------------------
@@ -515,13 +736,44 @@ def verify_evidence(request, evidence_id):
 
     evidence.save()
 
+    # --------------------------------
+    # VERIFICATION HISTORY
+    # --------------------------------
+
     EvidenceVerification.objects.create(
+
         evidence=evidence,
+
         verified_by_id=userid,
+
         original_hash=original_hash,
+
         calculated_hash=calculated_hash,
+
         result=result
     )
+
+    # --------------------------------
+    # ADMIN ALERT FOR MODIFIED IMAGE
+    # --------------------------------
+
+    if evidence.is_modified and evidence.modified_from and not AdminAlert.objects.filter(evidence=evidence).exists():
+
+        AdminAlert.objects.create(
+
+            evidence=evidence,
+
+            message=(
+                'Modified/Cropped evidence verified. '
+                'Evidence "' +
+                evidence.evidence_title +
+                '" appears to be a modified version of "' +
+                evidence.modified_from.evidence_title +
+                '". '
+                'The uploaded evidence was flagged for '
+                'administrator review.'
+            )
+        )
 
     messages.success(
         request,
@@ -529,9 +781,9 @@ def verify_evidence(request, evidence_id):
     )
 
     return redirect(
-        '/evidence_details/' + str(evidence.id)
+        '/evidence_details/' +
+        str(evidence.id)
     )
-
 
 # ---------------------------------------------------------
 # ADMIN - ALL EVIDENCE
@@ -604,3 +856,195 @@ def verification_history(request):
             'verifications': verifications
         }
     )
+
+# ---------------------------------------------------------
+# ADMIN - MODIFICATION ALERTS & TAMPERED EVIDENCE REVIEW
+# ---------------------------------------------------------
+
+def admin_alerts(request):
+
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    if request.session.get('usertype') != 'Admin':
+        return redirect('/login')
+
+    alerts = AdminAlert.objects.select_related(
+        'evidence',
+        'evidence__user',
+        'evidence__modified_from',
+        'evidence__modified_from__user'
+    ).all().order_by('-id')
+
+    # All modified evidence for quick reference
+    modified_evidences = DigitalEvidence.objects.filter(
+        is_modified=True
+    ).select_related(
+        'user',
+        'modified_from',
+        'modified_from__user'
+    ).order_by('-id')
+
+    return render(
+        request,
+        "ADMIN/admin_alerts.html",
+        {
+            'alerts': alerts,
+            'modified_evidences': modified_evidences,
+        }
+    )
+
+
+# ---------------------------------------------------------
+# ADMIN - SIDE-BY-SIDE TAMPERED EVIDENCE REVIEW
+# ---------------------------------------------------------
+
+def admin_review_evidence(request, evidence_id):
+
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    if request.session.get('usertype') != 'Admin':
+        return redirect('/login')
+
+    evidence = DigitalEvidence.objects.select_related('user', 'modified_from', 'modified_from__user').get(
+        id=evidence_id
+    )
+
+    original_evidence = evidence.modified_from
+
+    # Fetch uploader profiles
+    tampered_profile = Registration.objects.filter(user=evidence.user).first()
+    original_profile = (
+        Registration.objects.filter(user=original_evidence.user).first()
+        if original_evidence else None
+    )
+
+    # Dynamic image similarity metrics calculation
+    match_metrics = {
+        'phash_difference': None,
+        'orb_matches': None,
+        'similarity_verdict': None,
+    }
+
+    if (
+        original_evidence and
+        evidence.category == 'Image' and
+        original_evidence.category == 'Image'
+    ):
+        try:
+            from PIL import Image
+            import imagehash
+            import cv2
+            import numpy as np
+
+            # pHash calculation
+            with evidence.evidence_file.open('rb') as f1, original_evidence.evidence_file.open('rb') as f2:
+                img1 = Image.open(f1).convert('RGB')
+                img2 = Image.open(f2).convert('RGB')
+                h1 = imagehash.phash(img1)
+                h2 = imagehash.phash(img2)
+                match_metrics['phash_difference'] = abs(h1 - h2)
+
+            # ORB Feature calculation
+            with evidence.evidence_file.open('rb') as f1, original_evidence.evidence_file.open('rb') as f2:
+                b1 = np.frombuffer(f1.read(), np.uint8)
+                b2 = np.frombuffer(f2.read(), np.uint8)
+                cv1 = cv2.imdecode(b1, cv2.IMREAD_GRAYSCALE)
+                cv2_img = cv2.imdecode(b2, cv2.IMREAD_GRAYSCALE)
+                if cv1 is not None and cv2_img is not None:
+                    orb = cv2.ORB_create(nfeatures=1500)
+                    kp1, des1 = orb.detectAndCompute(cv1, None)
+                    kp2, des2 = orb.detectAndCompute(cv2_img, None)
+                    if des1 is not None and des2 is not None:
+                        matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+                        matches = matcher.match(des1, des2)
+                        good_matches = [m for m in matches if m.distance < 50]
+                        match_metrics['orb_matches'] = len(good_matches)
+
+            # Formulate verdict summary
+            p_diff = match_metrics['phash_difference']
+            o_cnt = match_metrics['orb_matches']
+            if p_diff is not None and o_cnt is not None:
+                if p_diff <= 10 or o_cnt >= 15:
+                    match_metrics['similarity_verdict'] = f"High Similarity Detected ({o_cnt} ORB matches, pHash diff: {p_diff})"
+                else:
+                    match_metrics['similarity_verdict'] = f"Moderate/Low Similarity ({o_cnt} ORB matches, pHash diff: {p_diff})"
+        except Exception:
+            pass
+
+    # Mark related alerts as read since admin is reviewing
+    AdminAlert.objects.filter(evidence=evidence).update(is_read=True)
+
+    blocks = BlockchainBlock.objects.filter(evidence=evidence).order_by('block_index')
+
+    return render(
+        request,
+        "ADMIN/admin_review.html",
+        {
+            'evidence': evidence,
+            'original_evidence': original_evidence,
+            'tampered_profile': tampered_profile,
+            'original_profile': original_profile,
+            'match_metrics': match_metrics,
+            'blocks': blocks,
+        }
+    )
+
+
+# ---------------------------------------------------------
+# ADMIN - APPROVE EVIDENCE
+# ---------------------------------------------------------
+
+def admin_approve_evidence(request, evidence_id):
+
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    if request.session.get('usertype') != 'Admin':
+        return redirect('/login')
+
+    evidence = DigitalEvidence.objects.get(id=evidence_id)
+    evidence.status = 'Approved'
+    evidence.save()
+
+    AdminAlert.objects.filter(evidence=evidence).update(is_read=True)
+
+    messages.success(
+        request,
+        f'Evidence #{evidence.id} ("{evidence.evidence_title}") has been APPROVED.'
+    )
+
+    next_url = request.GET.get('next') or request.POST.get('next')
+    if next_url:
+        return redirect(next_url)
+    return redirect(f'/admin_review/{evidence.id}/')
+
+
+# ---------------------------------------------------------
+# ADMIN - REJECT EVIDENCE
+# ---------------------------------------------------------
+
+def admin_reject_evidence(request, evidence_id):
+
+    if 'userid' not in request.session:
+        return redirect('/login')
+
+    if request.session.get('usertype') != 'Admin':
+        return redirect('/login')
+
+    evidence = DigitalEvidence.objects.get(id=evidence_id)
+    evidence.status = 'Rejected'
+    evidence.save()
+
+    AdminAlert.objects.filter(evidence=evidence).update(is_read=True)
+
+    messages.warning(
+        request,
+        f'Evidence #{evidence.id} ("{evidence.evidence_title}") has been REJECTED.'
+    )
+
+    next_url = request.GET.get('next') or request.POST.get('next')
+    if next_url:
+        return redirect(next_url)
+    return redirect(f'/admin_review/{evidence.id}/')
