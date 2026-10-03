@@ -1,0 +1,86 @@
+{% extends 'USER/user_base.html' %}
+{% block nav_upload %}active{% endblock %}
+{% block title %}Upload Evidence — E-Vidence{% endblock %}
+{% block content %}
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="page-header">
+            <h2><i class="fa fa-upload me-2"></i>Upload Digital Evidence</h2>
+            <p>Submit a file to the blockchain ledger. A SHA-256 hash will be generated and permanently recorded.</p>
+        </div>
+
+        <div class="card p-4 p-md-5">
+            <form method="POST" action="/upload_evidence/" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-4">
+                    <label class="form-label"><i class="fa fa-heading me-1"></i>Evidence Title</label>
+                    <input class="form-control" type="text" name="evidence_title" placeholder="e.g. Contract Agreement – Oct 2026" required>
+                    <div style="font-size:0.78rem;color:#8ba5c0;margin-top:0.4rem;">A brief, descriptive name for this evidence record.</div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label"><i class="fa fa-tag me-1"></i>Category</label>
+                    <select class="form-select" name="category" required>
+                        <option value="">Select a category…</option>
+                        <option value="Document">Document / Contract</option>
+                        <option value="Image">Image / Photograph</option>
+                        <option value="Audio">Audio Recording</option>
+                        <option value="Video">Video Footage</option>
+                        <option value="Other">Other Digital Asset</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label"><i class="fa fa-align-left me-1"></i>Description</label>
+                    <textarea class="form-control" name="description" rows="3" placeholder="Describe the nature, origin, and context of this evidence…" required></textarea>
+                </div>
+
+                <div class="mb-5">
+                    <label class="form-label"><i class="fa fa-paperclip me-1"></i>Evidence File</label>
+                    <input class="form-control" type="file" name="evidence_file" required>
+                    <div style="font-size:0.78rem;color:#8ba5c0;margin-top:0.5rem;">
+                        <i class="fa fa-circle-info me-1 text-cyan"></i>
+                        Upon upload, a SHA-256 fingerprint is computed and written to the blockchain automatically.
+                        Supported: all file types.
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-cyber-solid">
+                    <i class="fa fa-lock me-2"></i>Secure & Upload to Ledger
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Info sidebar -->
+    <div class="col-lg-5 mt-4 mt-lg-0">
+        <div class="page-header"><h2 style="font-size:1rem;color:#8ba5c0;">What Happens Next?</h2></div>
+        <div class="card p-4 mb-3">
+            <div class="block-item">
+                <div style="font-size:0.85rem;font-weight:600;color:#00d4ff;margin-bottom:0.3rem;"><i class="fa fa-1 me-1"></i>File Received</div>
+                <div style="font-size:0.82rem;color:#8ba5c0;line-height:1.7;">Your file is received securely by the server over an encrypted connection.</div>
+            </div>
+            <div class="block-item">
+                <div style="font-size:0.85rem;font-weight:600;color:#00d4ff;margin-bottom:0.3rem;"><i class="fa fa-2 me-1"></i>SHA-256 Hashing</div>
+                <div style="font-size:0.82rem;color:#8ba5c0;line-height:1.7;">The file is processed in chunks to generate a unique 64-character hexadecimal fingerprint.</div>
+            </div>
+            <div class="block-item">
+                <div style="font-size:0.85rem;font-weight:600;color:#00d4ff;margin-bottom:0.3rem;"><i class="fa fa-3 me-1"></i>Blockchain Block Created</div>
+                <div style="font-size:0.82rem;color:#8ba5c0;line-height:1.7;">A new block is appended to the chain containing the evidence metadata, hash, and timestamp.</div>
+            </div>
+            <div class="block-item" style="padding-bottom:0;border-left:none;">
+                <div style="font-size:0.85rem;font-weight:600;color:#10b981;margin-bottom:0.3rem;"><i class="fa fa-check me-1"></i>Evidence Secured</div>
+                <div style="font-size:0.82rem;color:#8ba5c0;line-height:1.7;">Your evidence record is now live and ready for future verification against the immutable hash.</div>
+            </div>
+        </div>
+
+        <div class="card p-3" style="border-color:rgba(245,158,11,0.3);">
+            <div style="font-size:0.82rem;color:#f59e0b;"><i class="fa fa-triangle-exclamation me-2"></i><strong>Important Notice</strong></div>
+            <div style="font-size:0.8rem;color:#8ba5c0;margin-top:0.5rem;line-height:1.7;">Keep a copy of your original file. Any modification to the file after upload will cause verification to fail, as the hash will no longer match.</div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
