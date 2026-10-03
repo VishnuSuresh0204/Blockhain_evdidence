@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - My App{% endblock %}
+
+{% block content %}
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card shadow-sm border-danger border-2">
+            <div class="card-body">
+                <h2 class="card-title text-danger fw-bold">Admin Control Panel</h2>
+                <hr class="border-light">
+                <p class="card-text text-light fs-5">Administrator Access: {{ request.session.username }}</p>
+                <div class="row mt-4">
+                    <div class="col-md-3 mb-4">
+                        <div class="card bg-danger text-white h-100 border-0 shadow">
+                            <div class="card-body py-4 text-center">
+                                <h4 class="mb-3">Total Users</h4>
+                                <h2 class="fw-bold">150+</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card bg-warning text-dark h-100 border-0 shadow">
+                            <div class="card-body py-4 text-center">
+                                <h4 class="mb-3">Pending Requests</h4>
+                                <h2 class="fw-bold">12</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card bg-success text-white h-100 border-0 shadow">
+                            <div class="card-body py-4 text-center">
+                                <h4 class="mb-3">System Health</h4>
+                                <h2 class="fw-bold">Good</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card bg-secondary text-white h-100 border-0 shadow">
+                            <div class="card-body py-4 text-center">
+                                <h4 class="mb-3">Reports</h4>
+                                <h2 class="fw-bold">View</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
