@@ -177,7 +177,6 @@ def view_users(request):
 # ---------------------------------------------------------
 # USER - UPLOAD EVIDENCE
 # ---------------------------------------------------------
-
 def upload_evidence(request):
     if 'userid' not in request.session:
         return redirect('/login')
@@ -186,6 +185,7 @@ def upload_evidence(request):
         return redirect('/login')
 
     if request.method == 'POST':
+
         userid = request.session.get('userid')
 
         evidence_title = request.POST.get('evidence_title')
@@ -202,6 +202,10 @@ def upload_evidence(request):
 
         import hashlib
 
+        # --------------------------------
+        # SHA-256
+        # --------------------------------
+
         sha256_hash = hashlib.sha256()
 
         for chunk in evidence_file.chunks():
@@ -209,19 +213,119 @@ def upload_evidence(request):
 
         file_hash = sha256_hash.hexdigest()
 
+        # --------------------------------
+        # EXACT DUPLICATE CHECK
+        # Checks ALL USERS
+        # --------------------------------
+
         existing_evidence = DigitalEvidence.objects.filter(
             file_hash=file_hash
         ).first()
 
         if existing_evidence:
+
             messages.error(
                 request,
-                'Duplicate evidence detected. '
-                'This file has already been uploaded.'
+                'Duplicate evidence detected! '
+                'This exact file was already uploaded. '
+                'Previous Evidence: ' +
+                existing_evidence.evidence_title +
+                ' | Uploaded On: ' +
+                existing_evidence.uploaded_at.strftime(
+                    '%d-%m-%Y %I:%M %p'
+                )
             )
+
             return redirect('/upload_evidence')
 
-        user = Login.objects.get(id=userid)
+        # --------------------------------
+        # IMAGE pHASH CHECK
+        # Checks ALL USERS
+        # --------------------------------
+
+        image_hash = None
+
+        if category == 'Image':
+
+            try:
+
+                from PIL import Image
+                import imagehash
+
+                # Generate pHash
+                image = Image.open(evidence_file)
+
+                image_hash = str(
+                    imagehash.phash(image)
+                )
+
+                new_hash = imagehash.hex_to_hash(
+                    image_hash
+                )
+
+                similar_evidence = None
+                similarity_difference = None
+
+                # Get ALL previously uploaded images
+                previous_images = DigitalEvidence.objects.filter(
+                    category='Image'
+                ).exclude(
+                    image_hash__isnull=True
+                ).exclude(
+                    image_hash=''
+                )
+
+                # Compare with every previous image
+                for old_image in previous_images:
+
+                    old_hash = imagehash.hex_to_hash(
+                        old_image.image_hash
+                    )
+
+                    difference = old_hash - new_hash
+
+                    # Stronger threshold
+                    if difference <= 15:
+
+                        similar_evidence = old_image
+                        similarity_difference = difference
+
+                        break
+
+                # --------------------------------
+                # MODIFIED IMAGE DETECTED
+                # --------------------------------
+
+                if similar_evidence:
+
+                    messages.error(
+                        request,
+                        'Modified image detected! '
+                        'This image appears to be a modified '
+                        'or cropped version of previously uploaded evidence. '
+                        'Previous Evidence: ' +
+                        similar_evidence.evidence_title +
+                        ' | Uploaded On: ' +
+                        similar_evidence.uploaded_at.strftime(
+                            '%d-%m-%Y %I:%M %p'
+                        ) +
+                        ' | Similarity Distance: ' +
+                        str(similarity_difference)
+                    )
+
+                    return redirect('/upload_evidence')
+
+            except Exception as e:
+
+                image_hash = None
+
+        # --------------------------------
+        # CREATE NEW EVIDENCE
+        # --------------------------------
+
+        user = Login.objects.get(
+            id=userid
+        )
 
         evidence = DigitalEvidence.objects.create(
             user=user,
@@ -230,10 +334,17 @@ def upload_evidence(request):
             category=category,
             evidence_file=evidence_file,
             file_hash=file_hash,
+            image_hash=image_hash,
             status='Pending'
         )
 
-        create_blockchain_block(evidence)
+        # --------------------------------
+        # CREATE BLOCKCHAIN BLOCK
+        # --------------------------------
+
+        create_blockchain_block(
+            evidence
+        )
 
         messages.success(
             request,
