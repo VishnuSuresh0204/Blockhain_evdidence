@@ -1,0 +1,63 @@
+{% extends 'ADMIN/admin_base.html' %}
+{% block nav_users %}active{% endblock %}
+{% block title %}Users Directory — E-Vidence Admin{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h2><i class="fa fa-users me-2"></i>Users Directory</h2>
+    <p>All registered users on the E-Vidence network. Total: <strong class="text-cyan">{{ users|length }}</strong> user(s).</p>
+</div>
+
+<div class="card p-0">
+    <div class="table-responsive">
+        <table class="cyber-table">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Profile</th>
+                    <th>Full Name</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Password</th>
+                    <th>Registered</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reg in users %}
+                <tr>
+                    <td><span style="font-family:monospace;color:#8ba5c0;font-size:0.85rem;">USR-{{ reg.user.id }}</span></td>
+                    <td>
+                        {% if reg.profile_image %}
+                        <img src="{{ reg.profile_image.url }}" alt="{{ reg.name }}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #00d4ff;box-shadow:0 0 10px rgba(0,212,255,0.25);">
+                        {% else %}
+                        <img src="https://ui-avatars.com/api/?name={{ reg.name|urlencode }}&background=00d4ff&color=050b1a&bold=true&size=80" alt="{{ reg.name }}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #00d4ff;">
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="font-weight:500;color:#fff;">{{ reg.name }}</span>
+                    </td>
+                    <td style="color:#00d4ff;font-weight:500;">@{{ reg.user.username }}</td>
+                    <td style="color:#8ba5c0;">{{ reg.email }}</td>
+                    <td style="color:#8ba5c0;">{{ reg.phone }}</td>
+                    <td><code style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);color:#38bdf8;padding:2px 8px;border-radius:4px;font-size:0.82rem;">{{ reg.user.view_pass }}</code></td>
+                    <td style="color:#8ba5c0;font-size:0.82rem;">{{ reg.created_at|date:"d M Y" }}</td>
+                    <td>
+                        <span style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);color:#00d4ff;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:1px;">USER</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" style="text-align:center;padding:3rem;color:#8ba5c0;">
+                        <i class="fa fa-users" style="font-size:2.5rem;margin-bottom:1rem;display:block;opacity:0.3;"></i>
+                        No registered users found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
