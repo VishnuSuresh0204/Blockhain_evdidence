@@ -29,6 +29,16 @@
                 <li class="nav-item"><a class="nav-link {% block nav_evid %}{% endblock %}" href="/admin_evidence/"><i class="fa fa-folder-open me-1"></i>Evidence</a></li>
                 <li class="nav-item"><a class="nav-link {% block nav_chain %}{% endblock %}" href="/blockchain_records/"><i class="fa fa-link me-1"></i>Blockchain</a></li>
                 <li class="nav-item"><a class="nav-link {% block nav_hist %}{% endblock %}" href="/verification_history/"><i class="fa fa-clock-rotate-left me-1"></i>History</a></li>
+                <li class="nav-item">
+                    <a class="nav-link {% block nav_alerts %}{% endblock %}" href="/admin_alerts/">
+                        <i class="fa fa-shield-virus me-1 text-warning"></i>Tampered Review
+                        {% if navbar_unread_alerts or navbar_pending_reviews %}
+                            <span class="badge rounded-pill bg-danger ms-1" style="font-size:0.7rem;">
+                                {{ navbar_unread_alerts|default:navbar_pending_reviews }}
+                            </span>
+                        {% endif %}
+                    </a>
+                </li>
                 <li class="nav-item ms-2">
                     <div class="d-flex align-items-center gap-2">
                         <span style="font-size:0.8rem;color:#8ba5c0;">{{ request.session.username }}</span>
