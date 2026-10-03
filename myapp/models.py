@@ -26,7 +26,6 @@ class Registration(models.Model):
     def __str__(self):
         return self.name
 
-
 class DigitalEvidence(models.Model):
     CATEGORY_CHOICES = [
         ('Image', 'Image'),
@@ -40,6 +39,8 @@ class DigitalEvidence(models.Model):
         ('Pending', 'Pending'),
         ('Verified', 'Verified'),
         ('Tampered', 'Tampered'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
     ]
 
     user = models.ForeignKey(
@@ -47,22 +48,48 @@ class DigitalEvidence(models.Model):
         on_delete=models.CASCADE,
         related_name='evidence'
     )
+
     evidence_title = models.CharField(max_length=200)
     description = models.TextField()
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
-    evidence_file = models.FileField(upload_to='evidence/')
+
+    evidence_file = models.FileField(
+        upload_to='evidence/'
+    )
+
     file_hash = models.CharField(max_length=64)
+
+    image_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True
+    )
+
+    is_modified = models.BooleanField(
+        default=False
+    )
+
+    modified_from = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='modified_versions'
+    )
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='Pending'
     )
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-    image_hash = models.CharField(
-        max_length=64,
-        blank=True,
-        null=True,
+
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True
     )
+
+    @property
+    def uploader_profile(self):
+        return self.user.registration.first()
 
     def __str__(self):
         return self.evidence_title
@@ -102,3 +129,24 @@ class EvidenceVerification(models.Model):
 
     def __str__(self):
         return f"{self.evidence.evidence_title} - {self.result}"
+
+
+class AdminAlert(models.Model):
+    evidence = models.ForeignKey(
+        DigitalEvidence,
+        on_delete=models.CASCADE,
+        related_name='admin_alerts'
+    )
+
+    message = models.TextField()
+
+    is_read = models.BooleanField(
+        default=False
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return self.message
