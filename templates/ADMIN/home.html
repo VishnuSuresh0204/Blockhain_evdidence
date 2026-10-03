@@ -24,7 +24,7 @@
         <a href="/view_users/" style="text-decoration:none;">
             <div class="stat-card cyan">
                 <div class="stat-icon cyan"><i class="fa fa-users"></i></div>
-                <div class="stat-value text-cyan">—</div>
+                <div class="stat-value text-cyan">{{ total_users|default:"0" }}</div>
                 <div class="stat-label">Registered Users</div>
             </div>
         </a>
@@ -33,7 +33,7 @@
         <a href="/admin_evidence/" style="text-decoration:none;">
             <div class="stat-card magenta">
                 <div class="stat-icon magenta"><i class="fa fa-folder-open"></i></div>
-                <div class="stat-value text-magenta">—</div>
+                <div class="stat-value text-magenta">{{ total_evidence|default:"0" }}</div>
                 <div class="stat-label">Total Evidence</div>
             </div>
         </a>
@@ -42,17 +42,17 @@
         <a href="/blockchain_records/" style="text-decoration:none;">
             <div class="stat-card green">
                 <div class="stat-icon green"><i class="fa fa-cube"></i></div>
-                <div class="stat-value text-green">—</div>
+                <div class="stat-value text-green">{{ total_blocks|default:"0" }}</div>
                 <div class="stat-label">Blockchain Blocks</div>
             </div>
         </a>
     </div>
     <div class="col-sm-6 col-xl-3">
-        <a href="/verification_history/" style="text-decoration:none;">
+        <a href="/admin_alerts/" style="text-decoration:none;">
             <div class="stat-card red">
-                <div class="stat-icon red"><i class="fa fa-clock-rotate-left"></i></div>
-                <div class="stat-value" style="color:#ef4444;">—</div>
-                <div class="stat-label">Verifications Run</div>
+                <div class="stat-icon red"><i class="fa fa-shield-virus"></i></div>
+                <div class="stat-value" style="color:#ef4444;">{{ pending_reviews_count|default:pending_alerts_count|default:"0" }}</div>
+                <div class="stat-label">Tampered Reviews</div>
             </div>
         </a>
     </div>
@@ -64,16 +64,22 @@
         <div class="card p-4">
             <h6 class="text-cyan mb-3" style="font-size:0.85rem;"><i class="fa fa-bolt me-2"></i>QUICK ACTIONS</h6>
             <div class="d-flex flex-column gap-2">
-                <a href="/view_users/" class="btn-cyber" style="display:block;text-align:left;padding:0.6rem 1rem;font-size:0.88rem;">
-                    <i class="fa fa-users me-2"></i>Manage Users Directory
+                <a href="/admin_alerts/" style="display:block;text-align:left;padding:0.6rem 1rem;font-size:0.88rem;color:#f59e0b;border:1px solid rgba(245,158,11,0.5);border-radius:8px;background:rgba(245,158,11,0.12);font-weight:600;font-family:Inter,sans-serif;transition:all 0.2s;">
+                    <i class="fa fa-shield-virus me-2"></i>Review Flagged & Tampered Evidence
+                    {% if pending_reviews_count or pending_alerts_count %}
+                        <span class="badge bg-danger ms-2">{{ pending_reviews_count|default:pending_alerts_count }} pending</span>
+                    {% endif %}
                 </a>
                 <a href="/admin_evidence/" class="btn-cyber magenta" style="display:block;text-align:left;padding:0.6rem 1rem;font-size:0.88rem;">
                     <i class="fa fa-folder-open me-2"></i>View All Evidence Registry
                 </a>
+                <a href="/view_users/" class="btn-cyber" style="display:block;text-align:left;padding:0.6rem 1rem;font-size:0.88rem;">
+                    <i class="fa fa-users me-2"></i>Manage Users Directory
+                </a>
                 <a href="/blockchain_records/" class="btn-cyber green" style="display:block;text-align:left;padding:0.6rem 1rem;font-size:0.88rem;">
                     <i class="fa fa-link me-2"></i>Inspect Blockchain Ledger
                 </a>
-                <a href="/verification_history/" style="display:block;text-align:left;padding:0.6rem 1rem;font-size:0.88rem;color:#f59e0b;border:1px solid rgba(245,158,11,0.4);border-radius:8px;background:rgba(245,158,11,0.08);font-weight:600;font-family:Inter,sans-serif;transition:all 0.2s;">
+                <a href="/verification_history/" style="display:block;text-align:left;padding:0.6rem 1rem;font-size:0.88rem;color:#8ba5c0;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(255,255,255,0.03);font-weight:500;font-family:Inter,sans-serif;transition:all 0.2s;">
                     <i class="fa fa-clock-rotate-left me-2"></i>View Verification Audit Log
                 </a>
             </div>
