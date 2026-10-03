@@ -1,0 +1,93 @@
+{% extends 'USER/user_base.html' %}
+{% block title %}Evidence #{{ evidence.id }} — E-Vidence{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <a href="/my_evidence/" style="color:#8ba5c0;font-size:0.85rem;"><i class="fa fa-arrow-left me-1"></i>Back to My Evidence</a>
+    <h2 class="mt-2"><i class="fa fa-file-shield me-2"></i>{{ evidence.evidence_title }}</h2>
+    <p>Evidence Record #{{ evidence.id }} — Blockchain-secured digital asset</p>
+</div>
+
+<div class="row g-4">
+    <!-- Evidence details -->
+    <div class="col-lg-7">
+        <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="text-cyan mb-0" style="font-size:0.9rem;"><i class="fa fa-circle-info me-2"></i>ASSET DETAILS</h5>
+                {% if evidence.status == 'Verified' %}
+                    <span class="badge-verified"><i class="fa fa-check me-1"></i>Verified</span>
+                {% elif evidence.status == 'Tampered' %}
+                    <span class="badge-tampered"><i class="fa fa-triangle-exclamation me-1"></i>Tampered</span>
+                {% else %}
+                    <span class="badge-pending"><i class="fa fa-clock me-1"></i>Pending</span>
+                {% endif %}
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Title</div>
+                <div class="info-value">{{ evidence.evidence_title }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Category</div>
+                <div class="info-value text-cyan">{{ evidence.category }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Uploaded At</div>
+                <div class="info-value">{{ evidence.uploaded_at|date:"d F Y, H:i:s" }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Description</div>
+                <div class="info-value" style="white-space:pre-wrap;line-height:1.7;">{{ evidence.description }}</div>
+            </div>
+            <div class="info-row" style="flex-direction:column;gap:0.5rem;">
+                <div class="info-label"><i class="fa fa-hashtag me-1"></i>SHA-256 Hash</div>
+                <div class="hash-text">{{ evidence.file_hash }}</div>
+                <div style="font-size:0.75rem;color:#8ba5c0;">This fingerprint uniquely identifies the file's contents. Any alteration will produce a different hash.</div>
+            </div>
+        </div>
+
+        <!-- Verification action -->
+        {% if request.session.usertype == 'User' %}
+        <div class="card p-4" style="border-color:rgba(0,212,255,0.25);">
+            <div class="d-flex gap-3 align-items-start">
+                <div style="width:44px;height:44px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#00d4ff;font-size:1.1rem;">
+                    <i class="fa fa-shield-check"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.95rem;font-weight:600;color:#fff;margin-bottom:0.4rem;">Run Integrity Verification</div>
+                    <div style="font-size:0.85rem;color:#8ba5c0;line-height:1.7;margin-bottom:1rem;">The system will re-compute the SHA-256 hash of your stored file and compare it against the original hash recorded at upload time. If they match, the file is intact.</div>
+                    <a href="/verify_evidence/{{ evidence.id }}/" class="btn-cyber" style="padding:0.55rem 1.4rem;font-size:0.88rem;">
+                        <i class="fa fa-magnifying-glass me-2"></i>Verify Now
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Blockchain trail -->
+    <div class="col-lg-5">
+        <div class="card p-4" style="height:100%;">
+            <h5 class="text-cyan mb-4" style="font-size:0.9rem;"><i class="fa fa-link me-2"></i>BLOCKCHAIN TRAIL</h5>
+            {% for block in blocks %}
+            <div class="block-item">
+                <div style="font-size:0.82rem;font-weight:600;color:#fff;margin-bottom:0.5rem;">
+                    Block <span class="text-cyan">#{{ block.block_index }}</span>
+                    <span style="float:right;font-size:0.75rem;color:#8ba5c0;">{{ block.timestamp|date:"d M Y H:i" }}</span>
+                </div>
+                <div style="font-size:0.78rem;color:#8ba5c0;margin-bottom:0.4rem;">Previous Hash:</div>
+                <div class="hash-text mb-2">{{ block.previous_hash|slice:":32" }}…</div>
+                <div style="font-size:0.78rem;color:#8ba5c0;margin-bottom:0.4rem;">Current Hash:</div>
+                <div class="hash-text">{{ block.current_hash|slice:":32" }}…</div>
+            </div>
+            {% empty %}
+            <div style="text-align:center;color:#8ba5c0;padding:2rem 0;">
+                <i class="fa fa-link" style="font-size:2rem;opacity:0.3;margin-bottom:0.8rem;display:block;"></i>
+                No blockchain blocks found for this record.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
