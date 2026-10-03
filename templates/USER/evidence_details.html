@@ -2,11 +2,39 @@
 {% block title %}Evidence #{{ evidence.id }} — E-Vidence{% endblock %}
 {% block content %}
 
-<div class="page-header">
-    <a href="/my_evidence/" style="color:#8ba5c0;font-size:0.85rem;"><i class="fa fa-arrow-left me-1"></i>Back to My Evidence</a>
-    <h2 class="mt-2"><i class="fa fa-file-shield me-2"></i>{{ evidence.evidence_title }}</h2>
-    <p>Evidence Record #{{ evidence.id }} — Blockchain-secured digital asset</p>
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        {% if request.session.usertype == 'Admin' %}
+            <a href="/admin_evidence/" style="color:#8ba5c0;font-size:0.85rem;"><i class="fa fa-arrow-left me-1"></i>Back to Global Evidence</a>
+        {% else %}
+            <a href="/my_evidence/" style="color:#8ba5c0;font-size:0.85rem;"><i class="fa fa-arrow-left me-1"></i>Back to My Evidence</a>
+        {% endif %}
+        <h2 class="mt-2"><i class="fa fa-file-shield me-2"></i>{{ evidence.evidence_title }}</h2>
+        <p>Evidence Record #{{ evidence.id }} — Blockchain-secured digital asset</p>
+    </div>
+    {% if request.session.usertype == 'Admin' and evidence.is_modified %}
+        <a href="/admin_review/{{ evidence.id }}/" class="btn-cyber" style="color:#f59e0b;border-color:rgba(245,158,11,0.5);font-size:0.85rem;padding:0.5rem 1rem;">
+            <i class="fa fa-shield-virus me-1"></i>Open Forensic Review
+        </a>
+    {% endif %}
 </div>
+
+{% if evidence.is_modified and evidence.modified_from %}
+<div class="alert alert-cyber-warning mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+        <i class="fa fa-triangle-exclamation text-warning me-2"></i>
+        <strong>Visual Similarity Alert:</strong> This evidence was detected as a modified or cropped version of
+        <a href="/evidence_details/{{ evidence.modified_from.id }}/" class="text-cyan fw-bold">#{{ evidence.modified_from.id }} ({{ evidence.modified_from.evidence_title }})</a>.
+    </div>
+    {% if request.session.usertype == 'Admin' %}
+        <a href="/admin_review/{{ evidence.id }}/" class="badge-modified text-decoration-none" style="cursor:pointer;">
+            <i class="fa fa-magnifying-glass me-1"></i>Forensic Audit
+        </a>
+    {% else %}
+        <span class="badge-modified"><i class="fa fa-eye me-1"></i>Under Admin Review</span>
+    {% endif %}
+</div>
+{% endif %}
 
 <div class="row g-4">
     <!-- Evidence details -->
@@ -16,6 +44,10 @@
                 <h5 class="text-cyan mb-0" style="font-size:0.9rem;"><i class="fa fa-circle-info me-2"></i>ASSET DETAILS</h5>
                 {% if evidence.status == 'Verified' %}
                     <span class="badge-verified"><i class="fa fa-check me-1"></i>Verified</span>
+                {% elif evidence.status == 'Approved' %}
+                    <span class="badge-approved"><i class="fa fa-circle-check me-1"></i>Approved</span>
+                {% elif evidence.status == 'Rejected' %}
+                    <span class="badge-rejected"><i class="fa fa-circle-xmark me-1"></i>Rejected</span>
                 {% elif evidence.status == 'Tampered' %}
                     <span class="badge-tampered"><i class="fa fa-triangle-exclamation me-1"></i>Tampered</span>
                 {% else %}
