@@ -58,6 +58,11 @@ class DigitalEvidence(models.Model):
         default='Pending'
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    image_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+    )
 
     def __str__(self):
         return self.evidence_title
