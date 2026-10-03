@@ -200,9 +200,7 @@ def view_users(request):
     )
 
 
-# ---------------------------------------------------------
-# USER - UPLOAD EVIDENCE
-# ---------------------------------------------------------
+
 # ---------------------------------------------------------
 # USER - UPLOAD EVIDENCE
 # ---------------------------------------------------------
@@ -233,9 +231,9 @@ def upload_evidence(request):
 
         import hashlib
 
-        # --------------------------------
+        # -------------------------------------------------
         # SHA-256
-        # --------------------------------
+        # -------------------------------------------------
 
         sha256_hash = hashlib.sha256()
 
@@ -244,9 +242,9 @@ def upload_evidence(request):
 
         file_hash = sha256_hash.hexdigest()
 
-        # --------------------------------
+        # -------------------------------------------------
         # EXACT DUPLICATE CHECK
-        # --------------------------------
+        # -------------------------------------------------
 
         existing_evidence = DigitalEvidence.objects.filter(
             file_hash=file_hash
@@ -268,19 +266,18 @@ def upload_evidence(request):
 
             return redirect('/upload_evidence')
 
-        # --------------------------------
+        # -------------------------------------------------
         # MODIFICATION VARIABLES
-        # --------------------------------
+        # -------------------------------------------------
 
         image_hash = None
-
         is_modified = False
-
         modified_from = None
 
-        # --------------------------------
-        # IMAGE DETECTION
-        # --------------------------------
+        # -------------------------------------------------
+        # IMAGE SIMILARITY DETECTION
+        # pHash + ORB
+        # -------------------------------------------------
 
         if category == 'Image':
 
@@ -291,28 +288,27 @@ def upload_evidence(request):
                 import cv2
                 import numpy as np
 
-                # Reset uploaded file
+                # -------------------------------------------------
+                # RESET FILE POSITION
+                # -------------------------------------------------
+
                 evidence_file.seek(0)
+
+                # -------------------------------------------------
+                # pHASH
+                # -------------------------------------------------
 
                 image = Image.open(
                     evidence_file
                 ).convert('RGB')
 
-                # --------------------------------
-                # pHASH
-                # --------------------------------
+                phash = imagehash.phash(image)
 
-                phash = imagehash.phash(
-                    image
-                )
+                image_hash = str(phash)
 
-                image_hash = str(
-                    phash
-                )
-
-                # --------------------------------
+                # -------------------------------------------------
                 # ORB
-                # --------------------------------
+                # -------------------------------------------------
 
                 evidence_file.seek(0)
 
@@ -326,177 +322,195 @@ def upload_evidence(request):
                     cv2.IMREAD_GRAYSCALE
                 )
 
-                orb = cv2.ORB_create(
-                    nfeatures=1500
-                )
+                # If OpenCV cannot read the image,
+                # continue without similarity detection.
+                if new_image is not None:
 
-                new_keypoints, new_descriptors = (
-                    orb.detectAndCompute(
-                        new_image,
-                        None
+                    orb = cv2.ORB_create(
+                        nfeatures=1500
                     )
-                )
 
-                similar_evidence = None
-                best_match_count = 0
-                best_phash_difference = None
+                    new_keypoints, new_descriptors = (
+                        orb.detectAndCompute(
+                            new_image,
+                            None
+                        )
+                    )
 
-                # --------------------------------
-                # GET ALL PREVIOUS IMAGES
-                # --------------------------------
+                    similar_evidence = None
+                    best_match_count = 0
+                    best_phash_difference = None
 
-                previous_images = DigitalEvidence.objects.filter(
-                    category='Image'
-                ).exclude(
-                    image_hash__isnull=True
-                ).exclude(
-                    image_hash=''
-                )
+                    # -------------------------------------------------
+                    # GET ALL PREVIOUS IMAGES
+                    # -------------------------------------------------
 
-                # --------------------------------
-                # COMPARE WITH PREVIOUS IMAGES
-                # --------------------------------
+                    previous_images = DigitalEvidence.objects.filter(
+                        category='Image'
+                    ).exclude(
+                        image_hash__isnull=True
+                    ).exclude(
+                        image_hash=''
+                    )
 
-                for old_image in previous_images:
+                    # -------------------------------------------------
+                    # COMPARE WITH PREVIOUS IMAGES
+                    # -------------------------------------------------
 
-                    try:
+                    for old_image in previous_images:
 
-                        old_file = (
-                            old_image.evidence_file.open(
-                                'rb'
+                        try:
+
+                            old_file = (
+                                old_image.evidence_file.open(
+                                    'rb'
+                                )
                             )
-                        )
 
-                        old_bytes = np.frombuffer(
-                            old_file.read(),
-                            np.uint8
-                        )
-
-                        old_file.close()
-
-                        old_cv_image = cv2.imdecode(
-                            old_bytes,
-                            cv2.IMREAD_GRAYSCALE
-                        )
-
-                        if old_cv_image is None:
-                            continue
-
-                        old_keypoints, old_descriptors = (
-                            orb.detectAndCompute(
-                                old_cv_image,
-                                None
+                            old_bytes = np.frombuffer(
+                                old_file.read(),
+                                np.uint8
                             )
-                        )
 
-                        if (
-                            new_descriptors is None
-                            or
-                            old_descriptors is None
-                        ):
-                            continue
+                            old_file.close()
 
-                        # --------------------------------
-                        # MATCH FEATURES
-                        # --------------------------------
+                            old_cv_image = cv2.imdecode(
+                                old_bytes,
+                                cv2.IMREAD_GRAYSCALE
+                            )
 
-                        matcher = cv2.BFMatcher(
-                            cv2.NORM_HAMMING,
-                            crossCheck=True
-                        )
+                            if old_cv_image is None:
+                                continue
 
-                        matches = matcher.match(
-                            new_descriptors,
-                            old_descriptors
-                        )
+                            # -------------------------------------------------
+                            # OLD IMAGE ORB
+                            # -------------------------------------------------
 
-                        matches = sorted(
-                            matches,
-                            key=lambda x: x.distance
-                        )
-
-                        # Good matches
-                        good_matches = [
-                            match
-                            for match in matches
-                            if match.distance < 50
-                        ]
-
-                        match_count = len(
-                            good_matches
-                        )
-
-                        # --------------------------------
-                        # pHASH CHECK
-                        # --------------------------------
-
-                        old_phash = imagehash.hex_to_hash(
-                            old_image.image_hash
-                        )
-
-                        phash_difference = (
-                            old_phash - phash
-                        )
-
-                        # --------------------------------
-                        # DETECTION
-                        # --------------------------------
-
-                        if (
-                            match_count >= 15
-                            or
-                            phash_difference <= 10
-                        ):
+                            old_keypoints, old_descriptors = (
+                                orb.detectAndCompute(
+                                    old_cv_image,
+                                    None
+                                )
+                            )
 
                             if (
-                                similar_evidence is None
+                                new_descriptors is None
                                 or
-                                match_count >
-                                best_match_count
+                                old_descriptors is None
+                            ):
+                                continue
+
+                            # -------------------------------------------------
+                            # FEATURE MATCHING
+                            # -------------------------------------------------
+
+                            matcher = cv2.BFMatcher(
+                                cv2.NORM_HAMMING,
+                                crossCheck=True
+                            )
+
+                            matches = matcher.match(
+                                new_descriptors,
+                                old_descriptors
+                            )
+
+                            matches = sorted(
+                                matches,
+                                key=lambda x: x.distance
+                            )
+
+                            # -------------------------------------------------
+                            # GOOD MATCHES
+                            # -------------------------------------------------
+
+                            good_matches = [
+                                match
+                                for match in matches
+                                if match.distance < 50
+                            ]
+
+                            match_count = len(
+                                good_matches
+                            )
+
+                            # -------------------------------------------------
+                            # pHASH COMPARISON
+                            # -------------------------------------------------
+
+                            old_phash = imagehash.hex_to_hash(
+                                old_image.image_hash
+                            )
+
+                            phash_difference = (
+                                old_phash - phash
+                            )
+
+                            # -------------------------------------------------
+                            # STRICT SIMILARITY CHECK
+                            #
+                            # Both conditions must be satisfied.
+                            #
+                            # ORB matches >= 30
+                            # AND
+                            # pHash difference <= 10
+                            # -------------------------------------------------
+
+                            if (
+                                match_count >= 30
+                                and
+                                phash_difference <= 10
                             ):
 
-                                similar_evidence = (
-                                    old_image
-                                )
+                                # -------------------------------------------------
+                                # KEEP BEST MATCH
+                                # -------------------------------------------------
 
-                                best_match_count = (
-                                    match_count
-                                )
+                                if (
+                                    similar_evidence is None
+                                    or
+                                    match_count > best_match_count
+                                ):
 
-                                best_phash_difference = (
-                                    phash_difference
-                                )
+                                    similar_evidence = old_image
 
-                    except Exception:
-                        continue
+                                    best_match_count = (
+                                        match_count
+                                    )
 
-                # --------------------------------
-                # MODIFIED IMAGE DETECTED
-                # --------------------------------
+                                    best_phash_difference = (
+                                        phash_difference
+                                    )
 
-                if similar_evidence:
+                        except Exception:
+                            continue
 
-                    is_modified = True
+                    # -------------------------------------------------
+                    # MODIFIED IMAGE DETECTED
+                    # -------------------------------------------------
 
-                    modified_from = (
-                        similar_evidence
-                    )
+                    if similar_evidence:
+
+                        is_modified = True
+
+                        modified_from = (
+                            similar_evidence
+                        )
 
             except Exception:
 
                 image_hash = None
 
-        # --------------------------------
+        # -------------------------------------------------
         # GET USER
-        # --------------------------------
+        # -------------------------------------------------
 
         user = Login.objects.get(
             id=userid
         )
 
-        # --------------------------------
+        # -------------------------------------------------
         # CREATE EVIDENCE
-        # --------------------------------
+        # -------------------------------------------------
 
         evidence = DigitalEvidence.objects.create(
 
@@ -521,24 +535,27 @@ def upload_evidence(request):
             status='Pending'
         )
 
-        # --------------------------------
+        # -------------------------------------------------
         # BLOCKCHAIN
-        # --------------------------------
+        # -------------------------------------------------
 
         create_blockchain_block(
             evidence
         )
 
-        # --------------------------------
-        # SEND FOR ADMIN REVIEW IF MODIFIED
-        # --------------------------------
+        # -------------------------------------------------
+        # ADMIN ALERT
+        # -------------------------------------------------
 
         if is_modified and modified_from:
 
             AdminAlert.objects.create(
+
                 evidence=evidence,
+
                 message=(
-                    'Modified/Cropped evidence uploaded. Evidence "' +
+                    'Modified/Cropped evidence uploaded. '
+                    'Evidence "' +
                     evidence.evidence_title +
                     '" uploaded by @' +
                     user.username +
@@ -550,9 +567,9 @@ def upload_evidence(request):
                 )
             )
 
-        # --------------------------------
+        # -------------------------------------------------
         # USER MESSAGE
-        # --------------------------------
+        # -------------------------------------------------
 
         if is_modified:
 
@@ -1047,4 +1064,4 @@ def admin_reject_evidence(request, evidence_id):
     next_url = request.GET.get('next') or request.POST.get('next')
     if next_url:
         return redirect(next_url)
-    return redirect(f'/admin_review/{evidence.id}/')
+    return redirect(f'/admin_review/{evidence.id}/')
