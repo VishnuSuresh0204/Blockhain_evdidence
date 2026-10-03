@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - My App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center mt-5">
+        <h1 class="display-4 fw-bold text-white mb-4">Welcome to My App</h1>
+        <p class="lead text-light mb-5">Experience our dark themed responsive design powered by Django and Bootstrap.</p>
+        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+            <a href="/login" class="btn btn-primary btn-lg px-4 gap-3">Login</a>
+            <a href="/registration" class="btn btn-outline-light btn-lg px-4">Register</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
