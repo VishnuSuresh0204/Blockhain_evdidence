@@ -1,16 +1,97 @@
 {% extends 'base.html' %}
-
-{% block title %}Home - My App{% endblock %}
-
+{% block title %}E-Vidence — Blockchain Evidence Management{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 text-center mt-5">
-        <h1 class="display-4 fw-bold text-white mb-4">Welcome to My App</h1>
-        <p class="lead text-light mb-5">Experience our dark themed responsive design powered by Django and Bootstrap.</p>
-        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-            <a href="/login" class="btn btn-primary btn-lg px-4 gap-3">Login</a>
-            <a href="/registration" class="btn btn-outline-light btn-lg px-4">Register</a>
+
+<!-- HERO -->
+<div class="row align-items-center" style="min-height:82vh;">
+    <div class="col-lg-6 pe-lg-5">
+        <div class="mb-3">
+            <span style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);color:#00d4ff;font-size:0.78rem;font-weight:600;letter-spacing:2px;padding:5px 14px;border-radius:20px;">
+                <i class="fa fa-lock me-1"></i> BLOCKCHAIN-SECURED PLATFORM
+            </span>
+        </div>
+        <h1 style="font-size:2.8rem;line-height:1.2;color:#fff;margin-bottom:1.2rem;">
+            Immutable <span class="text-cyan">Digital Evidence</span><br>Management System
+        </h1>
+        <p style="color:#8ba5c0;font-size:1.05rem;line-height:1.8;max-width:480px;margin-bottom:2rem;">
+            Preserve, verify, and audit digital evidence with cryptographic integrity. Every file is hashed using SHA-256 and recorded on an append-only blockchain ledger — tamper-proof and permanently traceable.
+        </p>
+
+        <div class="d-flex flex-wrap gap-3 mb-5">
+            <a href="/registration/" class="btn-cyber-solid" style="width:auto;padding:0.7rem 2rem;">
+                <i class="fa fa-rocket me-2"></i>Get Started Free
+            </a>
+            <a href="/login/" class="btn-cyber" style="padding:0.7rem 2rem;">
+                <i class="fa fa-right-to-bracket me-2"></i>Sign In
+            </a>
+        </div>
+
+        <!-- Trust stats -->
+        <div class="d-flex gap-4">
+            <div>
+                <div style="font-size:1.4rem;font-weight:700;color:#fff;">SHA-256</div>
+                <div style="font-size:0.78rem;color:#8ba5c0;text-transform:uppercase;letter-spacing:1px;">Hashing</div>
+            </div>
+            <div style="border-left:1px solid rgba(255,255,255,0.1);padding-left:1.5rem;">
+                <div style="font-size:1.4rem;font-weight:700;color:#fff;">100%</div>
+                <div style="font-size:0.78rem;color:#8ba5c0;text-transform:uppercase;letter-spacing:1px;">Tamper-Proof</div>
+            </div>
+            <div style="border-left:1px solid rgba(255,255,255,0.1);padding-left:1.5rem;">
+                <div style="font-size:1.4rem;font-weight:700;color:#fff;">Instant</div>
+                <div style="font-size:0.78rem;color:#8ba5c0;text-transform:uppercase;letter-spacing:1px;">Verification</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right image panel -->
+    <div class="col-lg-6 mt-5 mt-lg-0">
+        <div class="card p-0 overflow-hidden" style="border:1px solid rgba(0,212,255,0.2);">
+            <img src="https://images.unsplash.com/photo-1639762681057-408e52192e55?q=80&w=800&auto=format&fit=crop"
+                 alt="Blockchain Network" class="img-fluid w-100" style="height:320px;object-fit:cover;opacity:0.85;">
+            <div class="p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-icon cyan"><i class="fa fa-cube"></i></div>
+                    <div>
+                        <div class="text-cyan" style="font-size:0.8rem;font-weight:600;letter-spacing:1px;">LATEST BLOCK</div>
+                        <div style="font-size:0.85rem;color:#8ba5c0;">Cryptographic chain is intact</div>
+                    </div>
+                    <span class="badge-verified ms-auto"><i class="fa fa-check me-1"></i>Verified</span>
+                </div>
+                <div class="hash-text">0x3f8c...a9e2 → SHA-256 → 7d4a1b9c2e5f8a3d...</div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- FEATURES -->
+<div class="mt-5 pt-3">
+    <div class="text-center mb-4">
+        <h2 style="font-size:1.5rem;color:#fff;">How It Works</h2>
+        <p style="color:#8ba5c0;max-width:500px;margin:0.5rem auto 0;">Three simple steps to permanently secure your digital evidence.</p>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="feature-card cyan">
+                <div class="feature-icon cyan"><i class="fa fa-upload"></i></div>
+                <h5 class="text-white mb-2">1. Upload Evidence</h5>
+                <p style="color:#8ba5c0;font-size:0.88rem;line-height:1.7;margin:0;">Submit any digital file — documents, images, videos, audio. Our system accepts all formats and immediately begins cryptographic processing.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card magenta">
+                <div class="feature-icon magenta"><i class="fa fa-hashtag"></i></div>
+                <h5 class="text-white mb-2">2. Hash & Record</h5>
+                <p style="color:#8ba5c0;font-size:0.88rem;line-height:1.7;margin:0;">A unique SHA-256 fingerprint is generated from your file's content and permanently written to an append-only blockchain block — creating an irrefutable timestamp.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card green">
+                <div class="feature-icon green"><i class="fa fa-shield-check"></i></div>
+                <h5 class="text-white mb-2">3. Verify Integrity</h5>
+                <p style="color:#8ba5c0;font-size:0.88rem;line-height:1.7;margin:0;">At any point, re-hash the evidence file and compare it against the recorded hash. Any modification to the file — even a single byte — will be instantly detected.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
